@@ -1,6 +1,7 @@
 package com.example.chatbot.logic;
 
 import com.example.chatbot.model.Question;
+import com.example.chatbot.questions.AnswerChecker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
