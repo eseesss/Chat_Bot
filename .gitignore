@@ -38,5 +38,5 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### IntelliJ IDEA (full) ###
 .idea/
-*.iml
