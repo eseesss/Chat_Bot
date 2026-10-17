@@ -33,7 +33,11 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.rometools</groupId>
+            <artifactId>rome</artifactId>
+            <version>2.1.0</version>
+        </dependency>
         <!-- Явное указание Byte Buddy для Java 25 -->
         <dependency>
             <groupId>net.bytebuddy</groupId>
@@ -48,7 +52,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
