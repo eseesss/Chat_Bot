@@ -1,4 +1,4 @@
-package com.example.chatbot.questions;
+package com.example.chatbot.logic;
 import com.example.chatbot.model.Question;
 
 public class AnswerChecker {
