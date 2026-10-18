@@ -2,69 +2,88 @@ package com.example.chatbot.logic;
 
 import com.example.chatbot.model.Question;
 import com.example.chatbot.questions.QuestionProvider;
-import com.example.chatbot.ui.UserInterface;
 
 public class DialogService {
 
     private static final String HELP_COMMAND = "\\help";
 
     private final QuestionProvider questionProvider;
-    private final UserInterface ui;
     private final AnswerChecker answerChecker;
 
     private int correctCount = 0;
     private int totalCount = 0;
 
-    public DialogService(QuestionProvider questionProvider,
-                         UserInterface ui,
-                         AnswerChecker answerChecker) {
+    public int getCorrectCount() {
+        return correctCount;
+    }
+
+    public int getTotalCount() {
+        return totalCount;
+    }
+    // Флаг, чтобы понимать, задан ли уже первый вопрос
+    private boolean isStarted = false;
+    private Question currentQuestion;
+
+    public DialogService(QuestionProvider questionProvider, AnswerChecker answerChecker) {
         this.questionProvider = questionProvider;
-        this.ui = ui;
         this.answerChecker = answerChecker;
     }
 
-    public void run() {
-        printGreeting();
-        while (true) {
-            processRound();
-        }
+    /**
+     * Этот метод вызывается, когда пользователь только начал общение.
+     * Возвращает приветствие и первый вопрос.
+     */
+    public String startDialog() {
+        isStarted = true;
+        String greeting = "Привет! Я бот-викторина. Напиши \\help, чтобы узнать правила.\n\n";
+        return greeting + askNextQuestion();
     }
 
-    public void processRound() {
-        Question question = questionProvider.nextQuestion();
-        ui.showMessage(question.getText());
-
-        String userAnswer = ui.readInput();
-
-        if (HELP_COMMAND.equals(userAnswer.trim())) {
-            printHelp();
-            return;
+    /**
+     * Этот метод вызывается, когда пользователь присылает ответ.
+     * Проверяет ответ и возвращает результат + следующий вопрос.
+     */
+    public String processAnswer(String userAnswer) {
+        if (!isStarted || currentQuestion == null) {
+            return "Пожалуйста, напиши \\start или \\help, чтобы начать.";
         }
 
+        String trimmedAnswer = userAnswer.trim();
+
+        if (HELP_COMMAND.equals(trimmedAnswer)) {
+            return getHelpText() + "\n" + askNextQuestion(); // Повторяем текущий вопрос после помощи
+        }
         totalCount++;
-        if (answerChecker.isCorrect(userAnswer, question)) {
+        String resultMessage;
+
+        if (answerChecker.isCorrect(trimmedAnswer, currentQuestion)) {
             correctCount++;
-            ui.showMessage("Верно!");
+            resultMessage = "Верно!\n";
         } else {
-            ui.showMessage("Неверно. Правильный ответ: " + question.getCorrectAnswer());
+            resultMessage = "Неверно. Правильный ответ: " + currentQuestion.getCorrectAnswer() + "\n";
         }
-        ui.showMessage("Счёт: " + correctCount + " из " + totalCount);
+
+        resultMessage += "Счёт: " + correctCount + " из " + totalCount + "\n\n";
+
+        // Задаем следующий вопрос и добавляем его к результату
+        return resultMessage + askNextQuestion();
     }
 
-    public void printGreeting() {
-        ui.showMessage("Привет! Я чат-бот-викторина.");
-        ui.showMessage("Я задаю вопросы, ты отвечаешь — я проверяю.");
-        ui.showMessage("Напиши \\help, чтобы снова увидеть эту справку.");
+    /**
+     * Вспомогательный метод для получения следующего вопроса
+     */
+    private String askNextQuestion() {
+        currentQuestion = questionProvider.nextQuestion();
+
+        if (currentQuestion == null) {
+            return "Викторина окончена! Твой итоговый счёт: " + correctCount + " из " + totalCount;
+        }
+
+        return currentQuestion.getText();
     }
 
-    public void printHelp() {
-        ui.showMessage("Как со мной работать:");
-        ui.showMessage("1. Я задаю вопрос — ты пишешь ответ в консоль.");
-        ui.showMessage("2. Ответ проверяется без учёта регистра и пробелов.");
-        ui.showMessage("3. Команда \\help — показать эту справку.");
-        ui.showMessage("4. Для выхода закрой консоль (Ctrl+D / Ctrl+C).");
+    public String getHelpText() {
+        return "Правила простые: я задаю вопрос, ты пишешь ответ. " +
+                "В любой момент напиши \\help, чтобы увидеть это сообщение.";
     }
-
-    public int getCorrectCount() { return correctCount; }
-    public int getTotalCount() { return totalCount; }
 }

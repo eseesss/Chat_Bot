@@ -28,7 +28,8 @@ public class ConsoleUserInterfaceTest {
 
     @Test
     void showMessageTest() {
-        ConsoleUserInterface ui = new ConsoleUserInterface(new Scanner(""));
+        // создаем интерфейс без аргументов
+        ConsoleUserInterface ui = new ConsoleUserInterface();
         ui.showMessage("Привет");
         Assertions.assertTrue(outContent.toString().contains("Привет"));
     }
