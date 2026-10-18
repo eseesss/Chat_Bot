@@ -1,6 +1,9 @@
 package com.example.chatbot;
+
 import com.example.chatbot.logic.AnswerChecker;
+import com.example.chatbot.logic.NewsBotService;
 import com.example.chatbot.model.Question;
+import com.example.chatbot.news.RssNewsSource;
 import com.example.chatbot.questions.InMemoryQuestionRepository;
 import com.example.chatbot.questions.QuestionFactory;
 import com.example.chatbot.session.SessionManager;
@@ -14,18 +17,25 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Создаем зависимости
+        System.out.println("USERNAME = [" + System.getenv("TELEGRAM_BOT_USERNAME") + "]");
+        System.out.println("TOKEN = [" + System.getenv("TELEGRAM_BOT_TOKEN") + "]");
+
+        // 1. Зависимости викторины
         List<Question> questions = QuestionFactory.CreateQuestions();
         InMemoryQuestionRepository questionRepository = new InMemoryQuestionRepository(questions);
         AnswerChecker checker = new AnswerChecker();
 
-        // 2. Создаем менеджер сессий
+        // 2. Менеджер сессий
         SessionManager sessionManager = new SessionManager(questionRepository, checker);
 
-        // 3. Запускаем Телеграм-бота
+        // 3. Сервис новостей (RSS)
+        RssNewsSource rssSource = new RssNewsSource("https://ria.ru/export/rss2/archive/index.xml", "РИА Новости");
+        NewsBotService newsBotService = new NewsBotService(rssSource);
+
+        // 4. Запуск Telegram-бота
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(new TelegramBotHandler(sessionManager));
+            botsApi.registerBot(new TelegramBotHandler(sessionManager, newsBotService));
             System.out.println("Бот успешно запущен!");
         } catch (TelegramApiException e) {
             e.printStackTrace();
