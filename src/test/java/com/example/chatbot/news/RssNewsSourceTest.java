@@ -25,9 +25,9 @@ public class RssNewsSourceTest {
 
         // Проверяем поля первой новости
         NewsItem first = result.get(0);
-        Assertions.assertEquals("Заголовок новости 1", first.getTitle());
-        Assertions.assertEquals("https://e1.ru/news/1", first.getUrl());
-        Assertions.assertEquals("Test RSS", first.getSource());
+        Assertions.assertEquals("Заголовок новости 1", first.title());
+        Assertions.assertEquals("https://e1.ru/news/1", first.url());
+        Assertions.assertEquals("Test RSS", first.source());
     }
 
     @Test

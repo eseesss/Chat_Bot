@@ -19,11 +19,11 @@ public class NewsItemTest {
                 date
         );
 
-        Assertions.assertEquals("Заголовок", item.getTitle());
-        Assertions.assertEquals("Текст новости", item.getText());
-        Assertions.assertEquals("e1.ru", item.getSource());
-        Assertions.assertEquals("https://e1.ru/news/1", item.getUrl());
-        Assertions.assertEquals(date, item.getPublished());
+        Assertions.assertEquals("Заголовок", item.title());
+        Assertions.assertEquals("Текст новости", item.text());
+        Assertions.assertEquals("e1.ru", item.source());
+        Assertions.assertEquals("https://e1.ru/news/1", item.url());
+        Assertions.assertEquals(date, item.published());
     }
 
     @Test

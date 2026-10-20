@@ -5,6 +5,8 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import com.rometools.rome.feed.synd.SyndContent;
+import java.util.Optional;
 
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -38,14 +40,13 @@ public class RssNewsSource implements NewsSource {
 
             for (SyndEntry entry : feed.getEntries()) {
                 String title = entry.getTitle();
-                String text = entry.getDescription() != null
-                        ? entry.getDescription().getValue()
-                        : "";
+                String text = Optional.ofNullable(entry.getDescription())
+                        .map(SyndContent::getValue)
+                        .orElse("");
                 String link = entry.getLink();
-                LocalDateTime published = entry.getPublishedDate() != null
-                        ? entry.getPublishedDate().toInstant()
-                        .atZone(ZoneId.systemDefault()).toLocalDateTime()
-                        : LocalDateTime.now();
+                LocalDateTime published = Optional.ofNullable(entry.getPublishedDate())
+                        .map(date -> date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+                        .orElse(LocalDateTime.now());
 
                 result.add(new NewsItem(title, text, name, link, published));
             }

@@ -27,8 +27,8 @@ public class NewsBotService {
         int limit = Math.min(newsList.size(), 5); // Берем максимум 5 новостей
         for (int i = 0; i < limit; i++) {
             NewsItem item = newsList.get(i);
-            sb.append("🔹 ").append(item.getTitle()).append("\n")
-                    .append("🔗 ").append(item.getUrl()).append("\n\n");
+            sb.append("🔹 ").append(item.title()).append("\n")
+                    .append("🔗 ").append(item.url()).append("\n\n");
         }
 
         return sb.toString().trim();

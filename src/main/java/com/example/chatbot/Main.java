@@ -17,10 +17,7 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("USERNAME = [" + System.getenv("TELEGRAM_BOT_USERNAME") + "]");
-        System.out.println("TOKEN = [" + System.getenv("TELEGRAM_BOT_TOKEN") + "]");
 
-        // 1. Зависимости викторины
         List<Question> questions = QuestionFactory.CreateQuestions();
         InMemoryQuestionRepository questionRepository = new InMemoryQuestionRepository(questions);
         AnswerChecker checker = new AnswerChecker();
