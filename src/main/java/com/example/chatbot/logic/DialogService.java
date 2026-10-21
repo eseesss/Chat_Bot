@@ -9,49 +9,63 @@ public class DialogService {
 
     private final QuestionProvider questionProvider;
     private final AnswerChecker answerChecker;
+    private final NewsBotService newsBotService;
 
     private int correctCount = 0;
     private int totalCount = 0;
 
-    public int getCorrectCount() {
-        return correctCount;
-    }
-
-    public int getTotalCount() {
-        return totalCount;
-    }
-    // Флаг, чтобы понимать, задан ли уже первый вопрос
     private boolean isStarted = false;
     private Question currentQuestion;
 
-    public DialogService(QuestionProvider questionProvider, AnswerChecker answerChecker) {
+    public DialogService(QuestionProvider questionProvider,
+                         AnswerChecker answerChecker,
+                         NewsBotService newsBotService) {
         this.questionProvider = questionProvider;
         this.answerChecker = answerChecker;
+        this.newsBotService = newsBotService;
     }
 
     /**
-     * Этот метод вызывается, когда пользователь только начал общение.
-     * Возвращает приветствие и первый вопрос.
+     * Главный метод для обработки ЛЮБОГО ввода от пользователя.
+     * Здесь и викторина, и новости, и справка.
      */
+    public String processInput(String input) {
+        String trimmed = input.trim();
+
+        if (trimmed.equals("/start") || trimmed.equals("/help")) {
+            return "👋 Привет! Я бот-викторина с новостями.\n\n" +
+                    "Доступные команды:\n" +
+                    "▶️ /victorina — начать викторину\n" +
+                    "📰 /news — показать свежие новости\n" +
+                    "❓ /help — показать это сообщение";
+        }
+
+        if (trimmed.equals("/victorina")) {
+            return startDialog();
+        }
+
+        if (trimmed.equals("/news")) {
+            return newsBotService.formatNewsForTelegram(newsBotService.getLatestNews());
+        }
+
+        return processAnswer(trimmed);
+    }
+
     public String startDialog() {
         isStarted = true;
         String greeting = "Привет! Я бот-викторина. Напиши \\help, чтобы узнать правила.\n\n";
         return greeting + askNextQuestion();
     }
 
-    /**
-     * Этот метод вызывается, когда пользователь присылает ответ.
-     * Проверяет ответ и возвращает результат + следующий вопрос.
-     */
     public String processAnswer(String userAnswer) {
         if (!isStarted || currentQuestion == null) {
-            return "Пожалуйста, напиши \\start или \\help, чтобы начать.";
+            return "Пожалуйста, напиши /start или /help, чтобы начать.";
         }
 
         String trimmedAnswer = userAnswer.trim();
 
         if (HELP_COMMAND.equals(trimmedAnswer)) {
-            return getHelpText() + "\n" + askNextQuestion(); // Повторяем текущий вопрос после помощи
+            return getHelpText() + "\n" + askNextQuestion();
         }
         totalCount++;
         String resultMessage;
@@ -64,21 +78,14 @@ public class DialogService {
         }
 
         resultMessage += "Счёт: " + correctCount + " из " + totalCount + "\n\n";
-
-        // Задаем следующий вопрос и добавляем его к результату
         return resultMessage + askNextQuestion();
     }
 
-    /**
-     * Вспомогательный метод для получения следующего вопроса
-     */
     private String askNextQuestion() {
         currentQuestion = questionProvider.nextQuestion();
-
         if (currentQuestion == null) {
             return "Викторина окончена! Твой итоговый счёт: " + correctCount + " из " + totalCount;
         }
-
         return currentQuestion.getText();
     }
 
@@ -86,4 +93,7 @@ public class DialogService {
         return "Правила простые: я задаю вопрос, ты пишешь ответ. " +
                 "В любой момент напиши \\help, чтобы увидеть это сообщение.";
     }
+
+    public int getCorrectCount() { return correctCount; }
+    public int getTotalCount() { return totalCount; }
 }
