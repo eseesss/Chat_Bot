@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Test RSS</title>
+        <item>
+            <title>Заголовок новости 1</title>
+            <description>Текст новости 1</description>
+            <link>https://e1.ru/news/1</link>
+            <pubDate>Wed, 15 Oct 2026 12:00:00 GMT</pubDate>
+        </item>
+        <item>
+            <title>Заголовок новости 2</title>
+            <description>Текст новости 2</description>
+            <link>https://e1.ru/news/2</link>
+            <pubDate>Wed, 15 Oct 2026 13:00:00 GMT</pubDate>
+        </item>
+    </channel>
+</rss>
