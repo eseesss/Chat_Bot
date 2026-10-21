@@ -5,6 +5,7 @@ import com.example.chatbot.questions.QuestionProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.example.chatbot.logic.NewsBotService;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,7 +20,8 @@ public class DialogServiceTest {
         provider = mock(QuestionProvider.class);
         AnswerChecker checker = new AnswerChecker();
         // Теперь DialogService принимает только провайдера и чекер
-        service = new DialogService(provider, checker);
+        NewsBotService mockNewsService = mock(NewsBotService.class);
+        service = new DialogService(provider, checker, mockNewsService);
     }
 
     @Test
