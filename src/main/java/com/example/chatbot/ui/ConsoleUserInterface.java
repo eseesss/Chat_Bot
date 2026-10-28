@@ -7,18 +7,19 @@ import java.util.Scanner;
 public class ConsoleUserInterface implements UserInterface {
 
     private final Scanner scanner;
+    private final DialogService dialogService; // Поле обязательное!
 
-    // 1. Конструктор БЕЗ параметров (для Main.java, чтобы запускать консоль)
-    public ConsoleUserInterface() {
-        this.scanner = new Scanner(System.in);
+    // 1. Конструктор для реального запуска
+    public ConsoleUserInterface(DialogService dialogService) {
+        this(new Scanner(System.in), dialogService);
     }
 
-    // 2. Конструктор С параметром (для тестов, чтобы передать фейковый ввод)
-    public ConsoleUserInterface(Scanner scanner) {
+    // 2. Конструктор для тестов
+    public ConsoleUserInterface(Scanner scanner, DialogService dialogService) {
         this.scanner = scanner;
+        this.dialogService = dialogService;
     }
 
-    // --- Методы интерфейса ---
     @Override
     public void showMessage(String message) {
         System.out.println(message);
@@ -32,12 +33,12 @@ public class ConsoleUserInterface implements UserInterface {
         return "";
     }
 
-    public void start(DialogService dialogService) {
-        showMessage(dialogService.startDialog());
+    public void start() {
+        showMessage("Введите /start для меню, /victorina для викторины, /news для новостей.");
 
         while (true) {
             String userAnswer = readInput();
-            String response = dialogService.processAnswer(userAnswer);
+            String response = dialogService.processInput(userAnswer);
             showMessage(response);
         }
     }
