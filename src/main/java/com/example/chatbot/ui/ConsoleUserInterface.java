@@ -1,17 +1,23 @@
 package com.example.chatbot.ui;
 
+import com.example.chatbot.logic.DialogService;
+
 import java.util.Scanner;
 
 public class ConsoleUserInterface implements UserInterface {
 
     private final Scanner scanner;
+    private final DialogService dialogService; // Поле обязательное!
 
-    public ConsoleUserInterface() {
-        this(new Scanner(System.in));
+    // 1. Конструктор для реального запуска
+    public ConsoleUserInterface(DialogService dialogService) {
+        this(new Scanner(System.in), dialogService);
     }
 
-    public ConsoleUserInterface(Scanner scanner) {
+    // 2. Конструктор для тестов
+    public ConsoleUserInterface(Scanner scanner, DialogService dialogService) {
         this.scanner = scanner;
+        this.dialogService = dialogService;
     }
 
     @Override
@@ -21,6 +27,19 @@ public class ConsoleUserInterface implements UserInterface {
 
     @Override
     public String readInput() {
-        return scanner.nextLine();
+        if (scanner.hasNextLine()) {
+            return scanner.nextLine();
+        }
+        return "";
+    }
+
+    public void start() {
+        showMessage("Введите /start для меню, /victorina для викторины, /news для новостей.");
+
+        while (true) {
+            String userAnswer = readInput();
+            String response = dialogService.processInput(userAnswer);
+            showMessage(response);
+        }
     }
 }
