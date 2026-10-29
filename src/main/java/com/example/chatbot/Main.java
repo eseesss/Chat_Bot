@@ -4,7 +4,8 @@ import com.example.chatbot.logic.AnswerChecker;
 import com.example.chatbot.logic.DialogService;
 import com.example.chatbot.logic.NewsBotService;
 import com.example.chatbot.model.Question;
-import com.example.chatbot.news.RssNewsSource;
+import com.example.chatbot.news.NewsSource;
+import com.example.chatbot.news.NewsSourceFactory;
 import com.example.chatbot.questions.InMemoryQuestionRepository;
 import com.example.chatbot.questions.QuestionFactory;
 import com.example.chatbot.session.SessionManager;
@@ -25,9 +26,8 @@ public class Main {
         InMemoryQuestionRepository questionRepository = new InMemoryQuestionRepository(questions);
         AnswerChecker checker = new AnswerChecker();
         // Новости
-        RssNewsSource rssSource = new RssNewsSource(
-                "https://ria.ru/export/rss2/archive/index.xml", "РИА Новости");
-        NewsBotService newsBotService = new NewsBotService(rssSource);
+        NewsSource newsSource = NewsSourceFactory.createDefaultSource();
+        NewsBotService newsBotService = new NewsBotService(newsSource);
         // Сервис диалога (общая логика для всех UI)
         DialogService dialogService = new DialogService(questionRepository, checker, newsBotService);
         // Менеджер сессий (нужен только для Telegram, т.к. там много пользователей)
