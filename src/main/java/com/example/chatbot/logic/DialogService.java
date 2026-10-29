@@ -53,6 +53,8 @@ public class DialogService {
 
     public String startDialog() {
         isStarted = true;
+        correctCount = 0;
+        totalCount = 0;
         String greeting = "Привет! Я бот-викторина. Напиши \\help, чтобы узнать правила.\n\n";
         return greeting + askNextQuestion();
     }
@@ -84,6 +86,7 @@ public class DialogService {
     private String askNextQuestion() {
         currentQuestion = questionProvider.nextQuestion();
         if (currentQuestion == null) {
+            isStarted = false;
             return "Викторина окончена! Твой итоговый счёт: " + correctCount + " из " + totalCount;
         }
         return currentQuestion.getText();

@@ -29,7 +29,7 @@ public class ConsoleUserInterfaceTest {
     @Test
     void showMessageTest() {
         // создаем интерфейс без аргументов
-        ConsoleUserInterface ui = new ConsoleUserInterface();
+        ConsoleUserInterface ui = new ConsoleUserInterface(null);
         ui.showMessage("Привет");
         Assertions.assertTrue(outContent.toString().contains("Привет"));
     }
@@ -39,7 +39,7 @@ public class ConsoleUserInterfaceTest {
         Scanner scanner = new Scanner(
                 new ByteArrayInputStream("Париж\n".getBytes())
         );
-        ConsoleUserInterface ui = new ConsoleUserInterface(scanner);
+        ConsoleUserInterface ui = new ConsoleUserInterface(scanner, null);
         Assertions.assertEquals("Париж", ui.readInput());
     }
 }
