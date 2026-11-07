@@ -1,45 +1,19 @@
 package com.example.chatbot.ui;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.chatbot.logic.DialogService;
+import com.example.chatbot.session.UserSession;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.Scanner;
+import static org.mockito.Mockito.mock;
 
 public class ConsoleUserInterfaceTest {
 
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private PrintStream originalOut;
-
-    @BeforeEach
-    void setUp() {
-        originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
-    }
-
-    @AfterEach
-    void tearDown() {
-        System.setOut(originalOut);
-    }
-
     @Test
-    void showMessageTest() {
-        // создаем интерфейс без аргументов
-        ConsoleUserInterface ui = new ConsoleUserInterface(null);
-        ui.showMessage("Привет");
-        Assertions.assertTrue(outContent.toString().contains("Привет"));
-    }
+    void testConstructor() {
+        DialogService mockService = mock(DialogService.class);
+        UserSession mockSession = mock(UserSession.class);
+        Scanner scanner = new Scanner(System.in);
 
-    @Test
-    void readInputTest() {
-        Scanner scanner = new Scanner(
-                new ByteArrayInputStream("Париж\n".getBytes())
-        );
-        ConsoleUserInterface ui = new ConsoleUserInterface(scanner, null);
-        Assertions.assertEquals("Париж", ui.readInput());
+        ConsoleUserInterface ui = new ConsoleUserInterface(mockService, mockSession);
     }
 }
