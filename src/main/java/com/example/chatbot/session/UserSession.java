@@ -1,20 +1,41 @@
 package com.example.chatbot.session;
-import com.example.chatbot.logic.DialogService;
 
 public class UserSession {
     private final String chatId;
-    private final DialogService dialogService;
 
-    UserSession(String chatId, DialogService dialogService) {
+    private int correctCount = 0;
+    private int totalCount = 0;
+    private boolean isStarted = false;
+
+    public UserSession(String chatId) {
         this.chatId = chatId;
-        this.dialogService = dialogService;
     }
 
     public String getChatId() {
         return chatId;
     }
 
-    public DialogService getDialogService() {
-        return dialogService;
+    public int getCorrectCount() {
+        return correctCount;
+    }
+
+    public void incrementCorrectCount() {
+        correctCount++;
+    }
+
+    public int getTotalCount() {
+        return totalCount;
+    }
+
+    public void incrementTotalCount() {
+        totalCount++;
+    }
+
+    public boolean isStarted() {
+        return isStarted;
+    }
+
+    public void setStarted(boolean started) {
+        isStarted = started;
     }
 }

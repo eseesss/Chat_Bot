@@ -2,6 +2,7 @@ package com.example.chatbot.logic;
 
 import com.example.chatbot.model.Question;
 import com.example.chatbot.questions.QuestionProvider;
+import com.example.chatbot.session.UserSession;
 
 public class DialogService {
 
@@ -11,10 +12,6 @@ public class DialogService {
     private final AnswerChecker answerChecker;
     private final NewsBotService newsBotService;
 
-    private int correctCount = 0;
-    private int totalCount = 0;
-
-    private boolean isStarted = false;
     private Question currentQuestion;
 
     public DialogService(QuestionProvider questionProvider,
@@ -25,11 +22,7 @@ public class DialogService {
         this.newsBotService = newsBotService;
     }
 
-    /**
-     * Главный метод для обработки ЛЮБОГО ввода от пользователя.
-     * Здесь и викторина, и новости, и справка.
-     */
-    public String processInput(String input) {
+    public String processInput(String input, UserSession session) {
         String trimmed = input.trim();
 
         if (trimmed.equals("/start") || trimmed.equals("/help")) {
@@ -41,26 +34,24 @@ public class DialogService {
         }
 
         if (trimmed.equals("/victorina")) {
-            return startDialog();
+            return startDialog(session);
         }
 
         if (trimmed.equals("/news")) {
             return newsBotService.formatNewsForTelegram(newsBotService.getLatestNews());
         }
 
-        return processAnswer(trimmed);
+        return processAnswer(trimmed, session);
     }
 
-    public String startDialog() {
-        isStarted = true;
-        correctCount = 0;
-        totalCount = 0;
+    public String startDialog(UserSession session) {
+        session.setStarted(true);
         String greeting = "Привет! Я бот-викторина. Напиши \\help, чтобы узнать правила.\n\n";
         return greeting + askNextQuestion();
     }
 
-    public String processAnswer(String userAnswer) {
-        if (!isStarted || currentQuestion == null) {
+    public String processAnswer(String userAnswer, UserSession session) {
+        if (!session.isStarted() || currentQuestion == null) {
             return "Пожалуйста, напиши /start или /help, чтобы начать.";
         }
 
@@ -69,25 +60,25 @@ public class DialogService {
         if (HELP_COMMAND.equals(trimmedAnswer)) {
             return getHelpText() + "\n" + askNextQuestion();
         }
-        totalCount++;
+
+        session.incrementTotalCount();
         String resultMessage;
 
         if (answerChecker.isCorrect(trimmedAnswer, currentQuestion)) {
-            correctCount++;
+            session.incrementCorrectCount();
             resultMessage = "Верно!\n";
         } else {
             resultMessage = "Неверно. Правильный ответ: " + currentQuestion.getCorrectAnswer() + "\n";
         }
 
-        resultMessage += "Счёт: " + correctCount + " из " + totalCount + "\n\n";
+        resultMessage += "Счёт: " + session.getCorrectCount() + " из " + session.getTotalCount() + "\n\n";
         return resultMessage + askNextQuestion();
     }
 
     private String askNextQuestion() {
         currentQuestion = questionProvider.nextQuestion();
         if (currentQuestion == null) {
-            isStarted = false;
-            return "Викторина окончена! Твой итоговый счёт: " + correctCount + " из " + totalCount;
+            return "Викторина окончена!";
         }
         return currentQuestion.getText();
     }
@@ -96,7 +87,4 @@ public class DialogService {
         return "Правила простые: я задаю вопрос, ты пишешь ответ. " +
                 "В любой момент напиши \\help, чтобы увидеть это сообщение.";
     }
-
-    public int getCorrectCount() { return correctCount; }
-    public int getTotalCount() { return totalCount; }
 }

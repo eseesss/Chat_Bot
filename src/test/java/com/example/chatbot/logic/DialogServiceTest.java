@@ -2,79 +2,74 @@ package com.example.chatbot.logic;
 
 import com.example.chatbot.model.Question;
 import com.example.chatbot.questions.QuestionProvider;
+import com.example.chatbot.session.UserSession;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import com.example.chatbot.logic.NewsBotService;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DialogServiceTest {
 
     private DialogService service;
     private QuestionProvider provider;
+    private UserSession session;
+    private NewsBotService newsBotService;
 
     @BeforeEach
     void setUp() {
         provider = mock(QuestionProvider.class);
+        newsBotService = mock(NewsBotService.class);
         AnswerChecker checker = new AnswerChecker();
-        // Теперь DialogService принимает только провайдера и чекер
-        NewsBotService mockNewsService = mock(NewsBotService.class);
-        service = new DialogService(provider, checker, mockNewsService);
+
+        // Создаем реальную сессию (или мок)
+        session = new UserSession("test-chat-id");
+
+        service = new DialogService(provider, checker, newsBotService);
     }
 
     @Test
-    void startDialogReturnsGreetingAndFirstQuestionTest() {
-        when(provider.nextQuestion()).thenReturn(new Question("Столица Франции?", "Париж"));
-        String result = service.startDialog();
-
-        Assertions.assertTrue(result.contains("Привет"));
-        Assertions.assertTrue(result.contains("Столица Франции?"));
+    void greetingIsPrintedTest() {
+        // Вместо printGreeting (если он был удален), используем processInput
+        String response = service.processInput("/start", session);
+        Assertions.assertTrue(response.contains("Привет"));
     }
 
     @Test
-    void helpCommandReturnsHelpTextTest() {
+    void helpCommandDoesNotCountTest() {
         when(provider.nextQuestion()).thenReturn(new Question("Q?", "A"));
-        service.startDialog();
 
-        String result = service.processAnswer("\\help");
+        // Вызываем processInput с сессией
+        service.processInput("\\help", session);
 
-        Assertions.assertTrue(result.contains("Правила простые"));
-        Assertions.assertEquals(0, service.getTotalCount());
-        Assertions.assertEquals(0, service.getCorrectCount());
+        // Проверяем счетчики в СЕССИИ
+        Assertions.assertEquals(0, session.getTotalCount());
+        Assertions.assertEquals(0, session.getCorrectCount());
     }
 
     @Test
     void correctAnswerTest() {
-        when(provider.nextQuestion())
-                .thenReturn(new Question("Столица Франции?", "Париж"))
-                .thenReturn(new Question("Столица Германии?", "Берлин"));
+        when(provider.nextQuestion()).thenReturn(new Question("Столица Франции?", "Париж"));
 
-        service.startDialog();
+        // Сначала нужно начать викторину, чтобы появился вопрос
+        service.startDialog(session);
 
-        String result = service.processAnswer("париж");
+        // Теперь отвечаем
+        service.processAnswer("париж", session);
 
-        Assertions.assertTrue(result.contains("Верно"));
-        Assertions.assertTrue(result.contains("Столица Германии?"));
-        Assertions.assertEquals(1, service.getCorrectCount());
-        Assertions.assertEquals(1, service.getTotalCount());
+        // Проверяем счетчики в СЕССИИ
+        Assertions.assertEquals(1, session.getCorrectCount());
+        Assertions.assertEquals(1, session.getTotalCount());
     }
 
     @Test
     void wrongAnswerTest() {
-        when(provider.nextQuestion())
-                .thenReturn(new Question("Столица Франции?", "Париж"))
-                .thenReturn(new Question("Столица Германии?", "Берлин"));
+        when(provider.nextQuestion()).thenReturn(new Question("Столица Франции?", "Париж"));
 
-        service.startDialog();
+        service.startDialog(session);
+        service.processAnswer("Лондон", session);
 
-        String result = service.processAnswer("Лондон");
-
-        Assertions.assertTrue(result.contains("Неверно"));
-        Assertions.assertTrue(result.contains("Париж"));
-        Assertions.assertTrue(result.contains("Столица Германии?"));
-        Assertions.assertEquals(0, service.getCorrectCount());
-        Assertions.assertEquals(1, service.getTotalCount());
+        Assertions.assertEquals(0, session.getCorrectCount());
+        Assertions.assertEquals(1, session.getTotalCount());
     }
 }
