@@ -1,6 +1,7 @@
 package com.example.chatbot.logic;
 
 import com.example.chatbot.model.Question;
+import com.example.chatbot.news.NewsSourceFactory;
 import com.example.chatbot.questions.QuestionProvider;
 import com.example.chatbot.session.UserSession;
 import org.junit.jupiter.api.Assertions;
@@ -25,7 +26,7 @@ public class DialogServiceTest {
         // Создаем реальную сессию (или мок)
         session = new UserSession("test-chat-id");
 
-        service = new DialogService(provider, checker, newsBotService);
+        service = new DialogService(provider, checker, newsBotService, new NewsSourceFactory());
     }
 
     @Test

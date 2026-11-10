@@ -1,6 +1,9 @@
 package com.example.chatbot.telegram;
 
 import com.example.chatbot.logic.DialogService;
+import com.example.chatbot.logic.NewsBotService;
+import com.example.chatbot.news.NoFilter;
+import com.example.chatbot.news.SentimentFilter;
 import com.example.chatbot.session.SessionManager;
 import com.example.chatbot.session.UserSession;
 import com.example.chatbot.ui.TelegramUserInterface;
@@ -40,9 +43,10 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
             TelegramUserInterface tgUi = new TelegramUserInterface(this, chatId);
 
             if (messageText.equals("/start") || messageText.equals("/news")) {
+                String helpText = dialogService.processInput(messageText, session);
                 SendMessage message = new SendMessage();
                 message.setChatId(chatId);
-                message.setText("Привет! Я бот-новостник.\nВыберите действие:");
+                message.setText(helpText);
                 message.setReplyMarkup(createMainMenuMarkup()); // Метод создания кнопок
                 // добавили execute, иначе сообщение не отправляется
                 try {
@@ -77,12 +81,27 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
             else if (callData.startsWith("source_")) {
                 // вызов новостей
                 UserSession session = sessionManager.getSession(chatId);
-                String newsText = dialogService.getNewsForSource(callData, session);
-                editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
+                session.setCurrentSource(callData);
+
+                editMessageText(chatId, messageId, "Источник выбран. Настроить фильтр негатива?", createFilterSelectionMarkup());
             } else if ("more_news".equals(callData)) {
                 UserSession session = sessionManager.getSession(chatId);
                 String moreNewsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
                 editMessageText(chatId, messageId, moreNewsText, createOtherSelectionMarkup());
+            }
+            else if ("filter_none".equals(callData)) {
+                dialogService.setFilter(new NoFilter());
+
+                UserSession session = sessionManager.getSession(chatId);
+                String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
+                editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
+            }
+            else if ("filter_sentiment".equals(callData)) {
+                dialogService.setFilter(new SentimentFilter());
+
+                UserSession session = sessionManager.getSession(chatId);
+                String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
+                editMessageText(chatId, messageId, "Включен фильтр негатива.\\n\\n" + newsText, createOtherSelectionMarkup());
             }
         }
     }
@@ -137,6 +156,18 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
         row.add(createButton("Ещё 5", "more_news"));
+        rows.add(row);
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+    // фильтр-кнопка
+    private InlineKeyboardMarkup createFilterSelectionMarkup() {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        row.add(createButton("Фильтр негатива", "filter_sentiment"));
+        row.add(createButton("Без фильтра", "filter_none"));
         rows.add(row);
         markup.setKeyboard(rows);
         return markup;

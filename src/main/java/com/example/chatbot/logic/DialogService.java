@@ -70,6 +70,10 @@ public class DialogService {
         return newsBotService.formatNewsForTelegram(newsList);
     }
 
+    public void setFilter(com.example.chatbot.news.NewsFilter filter) {
+        this.newsBotService.setNewsFilter(filter);
+    }
+
     public String startDialog(UserSession session) {
         session.setStarted(true);
         String greeting = "Привет! Я бот-викторина. Напиши \\help, чтобы узнать правила.\n\n";
