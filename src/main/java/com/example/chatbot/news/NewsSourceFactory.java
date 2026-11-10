@@ -22,13 +22,12 @@ public class NewsSourceFactory {
         return new CompositeNewsSource(List.of(ria,lenta), "Все источники");
     }
 
-    // добавлен метод для создания источника по ID (для кнопок)
     public NewsSource createSourceById(String sourceId) {
         return switch (sourceId) {
-            case "source_ria" -> new RssNewsSource("https://ria.ru/export/rss2/archive/index.xml", "РИА Новости");
+            case "source_ria" -> new RssNewsSource(riaUrl, riaName);
             case "source_interfax" -> new RssNewsSource("https://www.interfax.ru/rss.asp", "Интерфакс");
-            case "source_lenta" -> new RssNewsSource("https://lenta.ru/rss", "Lenta.ru");
-            default -> createDefaultSource(); // Если пришел неизвестный ID, отдаем РИА
+            case "source_lenta" -> new RssNewsSource(lentaUrl, lentaName);
+            default -> new RssNewsSource(riaUrl, riaName);
         };
     }
 }

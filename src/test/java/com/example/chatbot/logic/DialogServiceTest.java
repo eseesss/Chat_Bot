@@ -1,6 +1,7 @@
 package com.example.chatbot.logic;
 
 import com.example.chatbot.model.Question;
+import com.example.chatbot.news.NewsSourceFactory;
 import com.example.chatbot.questions.QuestionProvider;
 import com.example.chatbot.session.UserSession;
 import org.junit.jupiter.api.Assertions;
@@ -15,22 +16,23 @@ public class DialogServiceTest {
     private QuestionProvider provider;
     private UserSession session;
     private NewsBotService newsBotService;
+    private NewsSourceFactory newsSourceFactory;
 
     @BeforeEach
     void setUp() {
         provider = mock(QuestionProvider.class);
         newsBotService = mock(NewsBotService.class);
+        newsSourceFactory = mock(NewsSourceFactory.class); // Мок фабрики
         AnswerChecker checker = new AnswerChecker();
 
-        // Создаем реальную сессию (или мок)
         session = new UserSession("test-chat-id");
 
-        service = new DialogService(provider, checker, newsBotService);
+        // Передаем 4 параметра
+        service = new DialogService(provider, checker, newsBotService, newsSourceFactory);
     }
 
     @Test
     void greetingIsPrintedTest() {
-        // Вместо printGreeting (если он был удален), используем processInput
         String response = service.processInput("/start", session);
         Assertions.assertTrue(response.contains("Привет"));
     }
@@ -39,10 +41,8 @@ public class DialogServiceTest {
     void helpCommandDoesNotCountTest() {
         when(provider.nextQuestion()).thenReturn(new Question("Q?", "A"));
 
-        // Вызываем processInput с сессией
         service.processInput("\\help", session);
 
-        // Проверяем счетчики в СЕССИИ
         Assertions.assertEquals(0, session.getTotalCount());
         Assertions.assertEquals(0, session.getCorrectCount());
     }
@@ -51,13 +51,9 @@ public class DialogServiceTest {
     void correctAnswerTest() {
         when(provider.nextQuestion()).thenReturn(new Question("Столица Франции?", "Париж"));
 
-        // Сначала нужно начать викторину, чтобы появился вопрос
         service.startDialog(session);
-
-        // Теперь отвечаем
         service.processAnswer("париж", session);
 
-        // Проверяем счетчики в СЕССИИ
         Assertions.assertEquals(1, session.getCorrectCount());
         Assertions.assertEquals(1, session.getTotalCount());
     }
