@@ -1,8 +1,13 @@
 package com.example.chatbot.logic;
 
+import com.example.chatbot.model.NewsItem;
 import com.example.chatbot.model.Question;
+import com.example.chatbot.news.NewsSource;
+import com.example.chatbot.news.NewsSourceFactory;
 import com.example.chatbot.questions.QuestionProvider;
 import com.example.chatbot.session.UserSession;
+
+import java.util.List;
 
 public class DialogService {
 
@@ -11,15 +16,20 @@ public class DialogService {
     private final QuestionProvider questionProvider;
     private final AnswerChecker answerChecker;
     private final NewsBotService newsBotService;
+    // добавили фабрику для выбора источника
+    private final NewsSourceFactory newsSourceFactory;
 
     private Question currentQuestion;
 
+    // добавили NewsSourceFactory в конструктор
     public DialogService(QuestionProvider questionProvider,
                          AnswerChecker answerChecker,
-                         NewsBotService newsBotService) {
+                         NewsBotService newsBotService,
+                         NewsSourceFactory newsSourceFactory) {
         this.questionProvider = questionProvider;
         this.answerChecker = answerChecker;
         this.newsBotService = newsBotService;
+        this.newsSourceFactory = newsSourceFactory;
     }
 
     public String processInput(String input, UserSession session) {
@@ -42,6 +52,22 @@ public class DialogService {
         }
 
         return processAnswer(trimmed, session);
+    }
+
+    // новый метод для получения новостей из конкретного источника
+    public String getNewsForSource(String sourceId, UserSession session) {
+        // Сохраняем выбор в сессию
+        session.setCurrentSource(sourceId);
+
+        // Просим фабрику создать нужный источник
+        NewsSource selectedSource = newsSourceFactory.createSourceById(sourceId);
+
+        // Переключаем NewsBotService на этот источник
+        newsBotService.setNewsSource(selectedSource);
+
+        // Получаем и форматируем новости
+        List<NewsItem> newsList = newsBotService.getLatestNews();
+        return newsBotService.formatNewsForTelegram(newsList);
     }
 
     public String startDialog(UserSession session) {
