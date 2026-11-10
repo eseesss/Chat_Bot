@@ -17,6 +17,14 @@ public class NewsBotService {
         return newsSource.fetch();
     }
 
+    public List<NewsItem> getNextPage(List<NewsItem> feed, int offset, int limit) {
+        if (feed == null || feed.isEmpty()){
+            return List.of();
+        }
+        int end = Math.min(offset + limit, feed.size());
+        return feed.subList(offset, end);
+    }
+
     public String formatNewsForTelegram(List<NewsItem> newsList) {
         if (newsList == null || newsList.isEmpty()) {
             return "Новостей пока нет.";

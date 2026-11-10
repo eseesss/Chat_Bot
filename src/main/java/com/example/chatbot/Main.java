@@ -25,7 +25,7 @@ public class Main {
         AnswerChecker checker = new AnswerChecker();
 
         NewsSourceFactory factory = new NewsSourceFactory();
-        NewsSource newsSource = factory.createDefaultSource();
+        NewsSource newsSource = factory.createCompositeSource();
         NewsBotService newsService = new NewsBotService(newsSource);
 
         DialogService dialogService = new DialogService(repo, checker, newsService);
