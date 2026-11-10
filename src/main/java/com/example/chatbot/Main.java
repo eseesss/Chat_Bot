@@ -28,7 +28,7 @@ public class Main {
         NewsSource newsSource = factory.createDefaultSource();
         NewsBotService newsService = new NewsBotService(newsSource);
 
-        DialogService dialogService = new DialogService(repo, checker, newsService);
+        DialogService dialogService = new DialogService(repo, checker, newsService, factory);
         SessionManager sessionManager = new SessionManager();
 
         String mode = args.length > 0 ? args[0].toLowerCase() : "console";

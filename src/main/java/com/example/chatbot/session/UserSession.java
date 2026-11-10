@@ -38,4 +38,9 @@ public class UserSession {
     public void setStarted(boolean started) {
         isStarted = started;
     }
+
+    private String currentSource = "source_ria"; // По умолчанию РИА
+
+    public String getCurrentSource() { return currentSource; }
+    public void setCurrentSource(String source) { this.currentSource = source; }
 }
