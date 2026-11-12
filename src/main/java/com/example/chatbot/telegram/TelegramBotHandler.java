@@ -1,7 +1,6 @@
 package com.example.chatbot.telegram;
 
 import com.example.chatbot.logic.DialogService;
-import com.example.chatbot.logic.NewsBotService;
 import com.example.chatbot.news.NoFilter;
 import com.example.chatbot.news.SentimentFilter;
 import com.example.chatbot.session.SessionManager;
@@ -26,7 +25,6 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
     private final DialogService dialogService;
 
     public TelegramBotHandler(SessionManager sessionManager, DialogService dialogService) {
-        // Передаем токен напрямую в родительский класс
         super(System.getenv("TELEGRAM_BOT_TOKEN"));
         this.sessionManager = sessionManager;
         this.dialogService = dialogService;
@@ -34,7 +32,7 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        // обработка обычных текстовых сообщений
+        // Обработка обычных текстовых сообщений
         if (update.hasMessage() && update.getMessage().hasText()) {
             String chatId = update.getMessage().getChatId().toString();
             String messageText = update.getMessage().getText();
@@ -47,8 +45,7 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
                 SendMessage message = new SendMessage();
                 message.setChatId(chatId);
                 message.setText(helpText);
-                message.setReplyMarkup(createMainMenuMarkup()); // Метод создания кнопок
-                // добавили execute, иначе сообщение не отправляется
+                message.setReplyMarkup(createMainMenuMarkup());
                 try {
                     execute(message);
                 } catch (TelegramApiException e) {
@@ -59,54 +56,52 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
                 tgUi.showMessage(response);
             }
         }
-        // обработка нажатий на inline-кнопки
+        // Обработка нажатий на inline-кнопки
         else if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             String callData = callbackQuery.getData();
             String chatId = callbackQuery.getMessage().getChatId().toString();
             Integer messageId = callbackQuery.getMessage().getMessageId();
 
-            // отвечаем tg, чтобы у пользователя пропали "часики"
             AnswerCallbackQuery answer = new AnswerCallbackQuery();
             answer.setCallbackQueryId(callbackQuery.getId());
             try {
-                execute(answer); // пытаемся отправить ответ tg через сеть
-            } catch (TelegramApiException e) { // на всякий случай ловим ошибку
+                execute(answer);
+            } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
-            // какая кнопка нажата
+
             if ("source_selection".equals(callData)) {
                 editMessageText(chatId, messageId, "Выберите источник:", createSourceSelectionMarkup());
             }
             else if (callData.startsWith("source_")) {
-                // вызов новостей
                 UserSession session = sessionManager.getSession(chatId);
                 session.setCurrentSource(callData);
-
                 editMessageText(chatId, messageId, "Источник выбран. Настроить фильтр негатива?", createFilterSelectionMarkup());
-            } else if ("more_news".equals(callData)) {
+            }
+            else if ("more_news".equals(callData)) {
                 UserSession session = sessionManager.getSession(chatId);
-                String moreNewsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
+                // ИСПРАВЛЕНО: вызываем getMoreNews, а не getNewsForSource
+                String moreNewsText = dialogService.getMoreNews(session);
                 editMessageText(chatId, messageId, moreNewsText, createOtherSelectionMarkup());
             }
             else if ("filter_none".equals(callData)) {
                 dialogService.setFilter(new NoFilter());
-
                 UserSession session = sessionManager.getSession(chatId);
+                session.setFilterEnabled(false);
                 String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
                 editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
             }
             else if ("filter_sentiment".equals(callData)) {
                 dialogService.setFilter(new SentimentFilter());
-
                 UserSession session = sessionManager.getSession(chatId);
+                session.setFilterEnabled(true);
                 String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
-                editMessageText(chatId, messageId, "Включен фильтр негатива.\\n\\n" + newsText, createOtherSelectionMarkup());
+                editMessageText(chatId, messageId, "Включен фильтр негатива.\n\n" + newsText, createOtherSelectionMarkup());
             }
         }
     }
 
-    // Вспомогательный метод, чтобы не дублировать код редактирования
     private void editMessageText(String chatId, Integer messageId, String text, InlineKeyboardMarkup keyboard) {
         EditMessageText editMessage = new EditMessageText();
         editMessage.setChatId(chatId);
@@ -125,8 +120,6 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         return System.getenv().getOrDefault("TELEGRAM_BOT_USERNAME", "default_bot");
     }
 
-    //создаём 3 разных клавиатуры
-    // главное меню (1-ая)
     private InlineKeyboardMarkup createMainMenuMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -137,7 +130,6 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         return markup;
     }
 
-    // выбор источника
     private InlineKeyboardMarkup createSourceSelectionMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -150,7 +142,6 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         return markup;
     }
 
-    // ещё 5
     private InlineKeyboardMarkup createOtherSelectionMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -161,7 +152,6 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         return markup;
     }
 
-    // фильтр-кнопка
     private InlineKeyboardMarkup createFilterSelectionMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -173,7 +163,6 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         return markup;
     }
 
-    // вспомогательный метод для создания кнопки
     private InlineKeyboardButton createButton(String text, String callbackData) {
         InlineKeyboardButton button = new InlineKeyboardButton();
         button.setText(text);

@@ -16,12 +16,10 @@ public class DialogService {
     private final QuestionProvider questionProvider;
     private final AnswerChecker answerChecker;
     private final NewsBotService newsBotService;
-    // добавили фабрику для выбора источника
     private final NewsSourceFactory newsSourceFactory;
 
     private Question currentQuestion;
 
-    // добавили NewsSourceFactory в конструктор
     public DialogService(QuestionProvider questionProvider,
                          AnswerChecker answerChecker,
                          NewsBotService newsBotService,
@@ -54,20 +52,35 @@ public class DialogService {
         return processAnswer(trimmed, session);
     }
 
-    // новый метод для получения новостей из конкретного источника
+    // Загрузка новостей по выбранному источнику (сохраняет в сессию)
     public String getNewsForSource(String sourceId, UserSession session) {
-        // Сохраняем выбор в сессию
         session.setCurrentSource(sourceId);
 
-        // Просим фабрику создать нужный источник
         NewsSource selectedSource = newsSourceFactory.createSourceById(sourceId);
-
-        // Переключаем NewsBotService на этот источник
         newsBotService.setNewsSource(selectedSource);
 
-        // Получаем и форматируем новости
+        // ВАЖНО: сохраняем список новостей и сбрасываем смещение
         List<NewsItem> newsList = newsBotService.getLatestNews();
+        session.setCurrentNewsFeed(newsList);
+        session.setCurrentNewsOffset(0);
+
         return newsBotService.formatNewsForTelegram(newsList);
+    }
+
+    // НОВЫЙ метод для кнопки "Ещё 5"
+    public String getMoreNews(UserSession session) {
+        List<NewsItem> feed = session.getCurrentNewsFeed();
+        int offset = session.getCurrentNewsOffset();
+
+        List<NewsItem> nextPage = newsBotService.getNextPage(feed, offset, 5);
+
+        if (nextPage.isEmpty()) {
+            return "Больше новостей нет.";
+        }
+
+        session.setCurrentNewsOffset(offset + 5);
+
+        return newsBotService.formatNewsForTelegram(nextPage);
     }
 
     public void setFilter(com.example.chatbot.news.NewsFilter filter) {
