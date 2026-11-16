@@ -1,20 +1,16 @@
 package com.example.chatbot.logic;
 
 import com.example.chatbot.model.NewsItem;
-import com.example.chatbot.news.NewsFilter;
 import com.example.chatbot.news.NewsSource;
 import java.util.List;
-import com.example.chatbot.news.NoFilter;
 
 public class NewsBotService {
 
     // убрали final, чтобы можно было менять источник
     private NewsSource currentNewsSource;
-    private NewsFilter currentFilter;
 
     public NewsBotService(NewsSource newsSource) {
         this.currentNewsSource = newsSource;
-        this.currentFilter = new NoFilter();
     }
 
     // добавлен сеттер для смены источника
@@ -22,20 +18,16 @@ public class NewsBotService {
         this.currentNewsSource = newsSource;
     }
 
-    public void setNewsFilter(NewsFilter filter) {
-        this.currentFilter = filter;
-    }
     public List<NewsItem> getLatestNews() {
         // используем currentNewsSource
         if (currentNewsSource == null) {
             throw new IllegalStateException("Источник новостей не установлен!");
         }
-        List<NewsItem> rawNews = currentNewsSource.fetch();
-        return currentFilter.filter(rawNews);
+        return currentNewsSource.fetch();
     }
 
     public List<NewsItem> getNextPage(List<NewsItem> feed, int offset, int limit) {
-        if (feed == null || feed.isEmpty()){
+        if (feed == null || feed.isEmpty()) {
             return List.of();
         }
         int end = Math.min(offset + limit, feed.size());

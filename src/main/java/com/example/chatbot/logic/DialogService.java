@@ -18,8 +18,6 @@ public class DialogService {
     private final NewsBotService newsBotService;
     private final NewsSourceFactory newsSourceFactory;
 
-    private Question currentQuestion;
-
     public DialogService(QuestionProvider questionProvider,
                          AnswerChecker answerChecker,
                          NewsBotService newsBotService,
@@ -83,17 +81,18 @@ public class DialogService {
         return newsBotService.formatNewsForTelegram(nextPage);
     }
 
-    public void setFilter(com.example.chatbot.news.NewsFilter filter) {
-        this.newsBotService.setNewsFilter(filter);
+    public void setFilter(com.example.chatbot.news.NewsFilter filter, UserSession session) {
+        session.setCurrentFilter(filter);
     }
 
     public String startDialog(UserSession session) {
         session.setStarted(true);
         String greeting = "Привет! Я бот-викторина. Напиши \\help, чтобы узнать правила.\n\n";
-        return greeting + askNextQuestion();
+        return greeting + askNextQuestion(session);
     }
 
     public String processAnswer(String userAnswer, UserSession session) {
+        Question currentQuestion = session.getCurrentQuestion();
         if (!session.isStarted() || currentQuestion == null) {
             return "Пожалуйста, напиши /start или /help, чтобы начать.";
         }
@@ -101,7 +100,7 @@ public class DialogService {
         String trimmedAnswer = userAnswer.trim();
 
         if (HELP_COMMAND.equals(trimmedAnswer)) {
-            return getHelpText() + "\n" + askNextQuestion();
+            return getHelpText() + "\n" + askNextQuestion(session);
         }
 
         session.incrementTotalCount();
@@ -111,19 +110,20 @@ public class DialogService {
             session.incrementCorrectCount();
             resultMessage = "Верно!\n";
         } else {
-            resultMessage = "Неверно. Правильный ответ: " + currentQuestion.getCorrectAnswer() + "\n";
+            resultMessage = "Неверно. Правильный ответ: " + askNextQuestion(session);
         }
 
         resultMessage += "Счёт: " + session.getCorrectCount() + " из " + session.getTotalCount() + "\n\n";
-        return resultMessage + askNextQuestion();
+        return resultMessage + askNextQuestion(session);
     }
 
-    private String askNextQuestion() {
-        currentQuestion = questionProvider.nextQuestion();
-        if (currentQuestion == null) {
+    private String askNextQuestion(UserSession session) {
+        Question nextQuestion = questionProvider.nextQuestion();
+        session.setCurrentQuestion(nextQuestion);
+        if (nextQuestion == null) {
             return "Викторина окончена!";
         }
-        return currentQuestion.getText();
+        return nextQuestion.getText();
     }
 
     public String getHelpText() {

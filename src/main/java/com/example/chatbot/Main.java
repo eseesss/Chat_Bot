@@ -19,7 +19,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) {
+    static void main(String[] args) {
         List<Question> questions = QuestionFactory.CreateQuestions();
         InMemoryQuestionRepository repo = new InMemoryQuestionRepository(questions);
         AnswerChecker checker = new AnswerChecker();

@@ -1,6 +1,9 @@
 package com.example.chatbot.session;
 
 import com.example.chatbot.model.NewsItem;
+import com.example.chatbot.model.Question;
+import com.example.chatbot.news.NewsFilter;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +13,24 @@ public class UserSession {
     private int correctCount = 0;
     private int totalCount = 0;
     private boolean isStarted = false;
+    private Question currentQuestion;
+
+    public Question getCurrentQuestion() {
+        return currentQuestion;
+    }
+    public void setCurrentQuestion(Question question) {
+        this.currentQuestion = question;
+    }
+
+    private NewsFilter currentFilter = null;
+
+    public NewsFilter getCurrentFilter() {
+        return currentFilter;
+    }
+
+    public void setCurrentFilter(NewsFilter filter) {
+        this.currentFilter = filter;
+    }
 
     private List<NewsItem> currentNewsFeed = new ArrayList<>();
     private int currentNewsOffset = 0;

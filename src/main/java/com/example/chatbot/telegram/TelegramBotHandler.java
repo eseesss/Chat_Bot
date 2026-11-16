@@ -40,18 +40,17 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
             UserSession session = sessionManager.getSession(chatId);
             TelegramUserInterface tgUi = new TelegramUserInterface(this, chatId);
 
-            if (messageText.equals("/start") || messageText.equals("/news")) {
+            if (messageText.equals("/start")) {
                 String helpText = dialogService.processInput(messageText, session);
-                SendMessage message = new SendMessage();
-                message.setChatId(chatId);
-                message.setText(helpText);
-                message.setReplyMarkup(createMainMenuMarkup());
-                try {
-                    execute(message);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-            } else {
+                // Отправляем приветствие через интерфейс
+                tgUi.showMessage(helpText);
+            }
+            else if (messageText.equals("/news")) {
+                // Отправляем отдельное сообщение с выбором источника
+                tgUi.sendMessageWithKeyboard("выберите источник новостей:", createSourceSelectionMarkup());
+            }
+            else {
+                // Обработка всех остальных текстовых команд
                 String response = dialogService.processInput(messageText, session);
                 tgUi.showMessage(response);
             }
@@ -86,15 +85,15 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
                 editMessageText(chatId, messageId, moreNewsText, createOtherSelectionMarkup());
             }
             else if ("filter_none".equals(callData)) {
-                dialogService.setFilter(new NoFilter());
                 UserSession session = sessionManager.getSession(chatId);
+                dialogService.setFilter(new NoFilter(), session);
                 session.setFilterEnabled(false);
                 String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
                 editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
             }
             else if ("filter_sentiment".equals(callData)) {
-                dialogService.setFilter(new SentimentFilter());
                 UserSession session = sessionManager.getSession(chatId);
+                dialogService.setFilter(new SentimentFilter(), session);
                 session.setFilterEnabled(true);
                 String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
                 editMessageText(chatId, messageId, "Включен фильтр негатива.\n\n" + newsText, createOtherSelectionMarkup());
