@@ -1,14 +1,11 @@
 package com.example.chatbot.telegram;
 
 import com.example.chatbot.logic.DialogService;
-import com.example.chatbot.news.NoFilter;
-import com.example.chatbot.news.SentimentFilter;
 import com.example.chatbot.session.SessionManager;
 import com.example.chatbot.session.UserSession;
 import com.example.chatbot.ui.TelegramUserInterface;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -20,6 +17,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TelegramBotHandler extends TelegramLongPollingBot {
+
+    //явное перечисление callback-данных вместо строк и startsWith("source_")
+    public enum Callback {
+        SOURCE_SELECTION("source_selection"),
+        SOURCE_RIA("source_ria"),
+        SOURCE_INTERFAX("source_interfax"),
+        SOURCE_LENTA("source_lenta"),
+        MORE_NEWS("more_news"),
+        FILTER_NONE("filter_none"),
+        FILTER_SENTIMENT("filter_sentiment");
+
+        private final String data;
+
+        Callback(String data) {
+            this.data = data;
+        }
+
+        public String data() {
+            return data;
+        }
+
+        public static Callback from(String data) {
+            for (Callback c : values()) {
+                if (c.data.equals(data)) {
+                    return c;
+                }
+            }
+            return null;
+        }
+    }
 
     private final SessionManager sessionManager;
     private final DialogService dialogService;
@@ -42,15 +69,12 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
 
             if (messageText.equals("/start")) {
                 String helpText = dialogService.processInput(messageText, session);
-                // Отправляем приветствие через интерфейс
                 tgUi.showMessage(helpText);
             }
             else if (messageText.equals("/news")) {
-                // Отправляем отдельное сообщение с выбором источника
-                tgUi.sendMessageWithKeyboard("выберите источник новостей:", createSourceSelectionMarkup());
+                tgUi.sendMessageWithKeyboard("Выберите источник новостей:", createSourceSelectionMarkup());
             }
             else {
-                // Обработка всех остальных текстовых команд
                 String response = dialogService.processInput(messageText, session);
                 tgUi.showMessage(response);
             }
@@ -70,33 +94,38 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
 
-            if ("source_selection".equals(callData)) {
-                editMessageText(chatId, messageId, "Выберите источник:", createSourceSelectionMarkup());
+            UserSession session = sessionManager.getSession(chatId);
+            Callback callback = Callback.from(callData);
+
+            //хендлер только переводит callback в команду DialogService и отрисовывает ответ.
+            if (callback == null) {
+                return;
             }
-            else if (callData.startsWith("source_")) {
-                UserSession session = sessionManager.getSession(chatId);
-                session.setCurrentSource(callData);
-                editMessageText(chatId, messageId, "Источник выбран. Настроить фильтр негатива?", createFilterSelectionMarkup());
-            }
-            else if ("more_news".equals(callData)) {
-                UserSession session = sessionManager.getSession(chatId);
-                // ИСПРАВЛЕНО: вызываем getMoreNews, а не getNewsForSource
-                String moreNewsText = dialogService.getMoreNews(session);
-                editMessageText(chatId, messageId, moreNewsText, createOtherSelectionMarkup());
-            }
-            else if ("filter_none".equals(callData)) {
-                UserSession session = sessionManager.getSession(chatId);
-                dialogService.setFilter(new NoFilter(), session);
-                session.setFilterEnabled(false);
-                String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
-                editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
-            }
-            else if ("filter_sentiment".equals(callData)) {
-                UserSession session = sessionManager.getSession(chatId);
-                dialogService.setFilter(new SentimentFilter(), session);
-                session.setFilterEnabled(true);
-                String newsText = dialogService.getNewsForSource(session.getCurrentSource(), session);
-                editMessageText(chatId, messageId, "Включен фильтр негатива.\n\n" + newsText, createOtherSelectionMarkup());
+
+            switch (callback) {
+                case SOURCE_SELECTION ->
+                        editMessageText(chatId, messageId,
+                                "Выберите источник:", createSourceSelectionMarkup());
+
+                case SOURCE_RIA, SOURCE_INTERFAX, SOURCE_LENTA -> {
+                    String text = dialogService.selectSource(callback.data(), session);
+                    editMessageText(chatId, messageId, text, createFilterSelectionMarkup());
+                }
+
+                case MORE_NEWS -> {
+                    String moreNewsText = dialogService.getMoreNews(session);
+                    editMessageText(chatId, messageId, moreNewsText, createOtherSelectionMarkup());
+                }
+
+                case FILTER_NONE -> {
+                    String newsText = dialogService.applyFilter(false, session);
+                    editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
+                }
+
+                case FILTER_SENTIMENT -> {
+                    String newsText = dialogService.applyFilter(true, session);
+                    editMessageText(chatId, messageId, newsText, createOtherSelectionMarkup());
+                }
             }
         }
     }
@@ -119,23 +148,13 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         return System.getenv().getOrDefault("TELEGRAM_BOT_USERNAME", "default_bot");
     }
 
-    private InlineKeyboardMarkup createMainMenuMarkup() {
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(createButton("📰 Выбор источника", "source_selection"));
-        rows.add(row);
-        markup.setKeyboard(rows);
-        return markup;
-    }
-
     private InlineKeyboardMarkup createSourceSelectionMarkup() {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(createButton("Риа Новости", "source_ria"));
-        row.add(createButton("Интерфакс", "source_interfax"));
-        row.add(createButton("Lenta.ru", "source_lenta"));
+        row.add(createButton("РИА Новости", Callback.SOURCE_RIA.data()));
+        row.add(createButton("Интерфакс", Callback.SOURCE_INTERFAX.data()));
+        row.add(createButton("Lenta.ru", Callback.SOURCE_LENTA.data()));
         rows.add(row);
         markup.setKeyboard(rows);
         return markup;
@@ -145,7 +164,7 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(createButton("Ещё 5", "more_news"));
+        row.add(createButton("Ещё 5", Callback.MORE_NEWS.data()));
         rows.add(row);
         markup.setKeyboard(rows);
         return markup;
@@ -155,8 +174,8 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(createButton("Фильтр негатива", "filter_sentiment"));
-        row.add(createButton("Без фильтра", "filter_none"));
+        row.add(createButton("Фильтр негатива", Callback.FILTER_SENTIMENT.data()));
+        row.add(createButton("Без фильтра", Callback.FILTER_NONE.data()));
         rows.add(row);
         markup.setKeyboard(rows);
         return markup;

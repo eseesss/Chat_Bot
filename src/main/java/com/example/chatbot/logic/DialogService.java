@@ -2,8 +2,11 @@ package com.example.chatbot.logic;
 
 import com.example.chatbot.model.NewsItem;
 import com.example.chatbot.model.Question;
+import com.example.chatbot.news.NewsFilter;
 import com.example.chatbot.news.NewsSource;
 import com.example.chatbot.news.NewsSourceFactory;
+import com.example.chatbot.news.NoFilter;
+import com.example.chatbot.news.SentimentFilter;
 import com.example.chatbot.questions.QuestionProvider;
 import com.example.chatbot.session.UserSession;
 
@@ -31,11 +34,20 @@ public class DialogService {
     public String processInput(String input, UserSession session) {
         String trimmed = input.trim();
 
+        //сначала обрабатываем шаг пошагового сценария новостей,
+        if (session.getPendingStep() == UserSession.PendingStep.WAITING_SOURCE) {
+            return handleSourceChoice(trimmed, session);
+        }
+        if (session.getPendingStep() == UserSession.PendingStep.WAITING_FILTER) {
+            return handleFilterChoice(trimmed, session);
+        }
+
         if (trimmed.equals("/start") || trimmed.equals("/help")) {
             return "👋 Привет! Я бот-викторина с новостями.\n\n" +
                     "Доступные команды:\n" +
                     "▶️ /victorina — начать викторину\n" +
                     "📰 /news — показать свежие новости\n" +
+                    "➡️ /more — ещё 5 новостей\n" +
                     "❓ /help — показать это сообщение";
         }
 
@@ -44,10 +56,73 @@ public class DialogService {
         }
 
         if (trimmed.equals("/news")) {
-            return newsBotService.formatNewsForTelegram(newsBotService.getLatestNews());
+            //запускаем пошаговый выбора источника и фильтра
+            session.setPendingStep(UserSession.PendingStep.WAITING_SOURCE);
+            return "Выберите источник новостей:\n" +
+                    "1 — РИА Новости\n" +
+                    "2 — Интерфакс\n" +
+                    "3 — Lenta.ru";
+        }
+
+        if (trimmed.equals("/more")) {
+            return getMoreNews(session);
         }
 
         return processAnswer(trimmed, session);
+    }
+
+    //шаг выбора источника в консольном
+    private String handleSourceChoice(String input, UserSession session) {
+        String sourceId;
+        switch (input) {
+            case "1" -> sourceId = "source_ria";
+            case "2" -> sourceId = "source_interfax";
+            case "3" -> sourceId = "source_lenta";
+            default -> {
+                return "Пожалуйста, выберите 1, 2 или 3:\n" +
+                        "1 — РИА Новости\n2 — Интерфакс\n3 — Lenta.ru";
+            }
+        }
+
+        session.setCurrentSource(sourceId);
+        session.setPendingStep(UserSession.PendingStep.WAITING_FILTER);
+        return "Настроить фильтр негатива? (да/нет)";
+    }
+
+    //шаг выбора фильтра в консольном
+    private String handleFilterChoice(String input, UserSession session) {
+        boolean enabled;
+        if (input.equalsIgnoreCase("да") || input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")) {
+            enabled = true;
+        } else if (input.equalsIgnoreCase("нет") || input.equalsIgnoreCase("no") || input.equalsIgnoreCase("n")) {
+            enabled = false;
+        } else {
+            return "Ответьте да или нет:";
+        }
+
+        session.setCurrentFilter(enabled ? new SentimentFilter() : new NoFilter());
+        session.setPendingStep(UserSession.PendingStep.NONE);
+
+        String newsText = getNewsForSource(session.getCurrentSource(), session);
+        String prefix = enabled ? "Включен фильтр негатива.\n\n" : "";
+        return prefix + newsText + "\n\nНапишите /more, чтобы получить ещё 5 новостей.";
+    }
+
+    // Логика выбора источника (используется и Telegram-хендлером)
+    public String selectSource(String sourceId, UserSession session) {
+        session.setCurrentSource(sourceId);
+        return "Источник выбран. Настроить фильтр негатива?";
+    }
+
+    // Логика применения фильтра (фильтр хранится в сессии конкретного пользователя)
+    public String applyFilter(boolean sentimentEnabled, UserSession session) {
+        NewsFilter filter = sentimentEnabled ? new SentimentFilter() : new NoFilter();
+        session.setCurrentFilter(filter);
+
+        String newsText = getNewsForSource(session.getCurrentSource(), session);
+        return sentimentEnabled
+                ? "Включен фильтр негатива.\n\n" + newsText
+                : newsText;
     }
 
     // Загрузка новостей по выбранному источнику (сохраняет в сессию)
@@ -57,15 +132,16 @@ public class DialogService {
         NewsSource selectedSource = newsSourceFactory.createSourceById(sourceId);
         newsBotService.setNewsSource(selectedSource);
 
-        // ВАЖНО: сохраняем список новостей и сбрасываем смещение
         List<NewsItem> newsList = newsBotService.getLatestNews();
         session.setCurrentNewsFeed(newsList);
+        // Пользователь выбрал новый источник — показываем новости с начала,
+        // поэтому сбрасываем смещение, чтобы пагинация "Ещё 5" не продолжила старый список.
         session.setCurrentNewsOffset(0);
 
         return newsBotService.formatNewsForTelegram(newsList);
     }
 
-    // НОВЫЙ метод для кнопки "Ещё 5"
+    // Метод для кнопки "Ещё 5"
     public String getMoreNews(UserSession session) {
         List<NewsItem> feed = session.getCurrentNewsFeed();
         int offset = session.getCurrentNewsOffset();
@@ -81,7 +157,7 @@ public class DialogService {
         return newsBotService.formatNewsForTelegram(nextPage);
     }
 
-    public void setFilter(com.example.chatbot.news.NewsFilter filter, UserSession session) {
+    public void setFilter(NewsFilter filter, UserSession session) {
         session.setCurrentFilter(filter);
     }
 

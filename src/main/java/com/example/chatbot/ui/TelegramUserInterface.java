@@ -28,7 +28,7 @@ public class TelegramUserInterface implements UserInterface {
         }
     }
 
-    // отправка сообщения с кнопками
+    //метод ИСПОЛЬЗУЕТСЯ в TelegramBotHandler при обработке команды /news
     public void sendMessageWithKeyboard(String text, InlineKeyboardMarkup keyboard) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
@@ -41,7 +41,7 @@ public class TelegramUserInterface implements UserInterface {
         }
     }
 
-    // редактироание сообщения
+    // Редактирование сообщения
     public void editMessage(Integer messageId, String newText, InlineKeyboardMarkup keyboard) {
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setChatId(chatId);
@@ -57,7 +57,7 @@ public class TelegramUserInterface implements UserInterface {
 
     @Override
     public String readInput() {
-        // В Телеграме мы не ждем ввод, поэтому возвращаем пустую строку
+        // В Тг мы не ждем ввод, поэтому возвращаем пустую строку
         return "";
     }
 }

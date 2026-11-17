@@ -2,18 +2,26 @@ package com.example.chatbot.ui;
 
 import com.example.chatbot.logic.DialogService;
 import com.example.chatbot.session.UserSession;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import java.util.Scanner;
-import static org.mockito.Mockito.mock;
+import org.mockito.Mockito;
 
-public class ConsoleUserInterfaceTest {
+import java.io.ByteArrayInputStream;
+import java.util.Scanner;
+
+class ConsoleUserInterfaceTest {
 
     @Test
-    void testConstructor() {
-        DialogService mockService = mock(DialogService.class);
-        UserSession mockSession = mock(UserSession.class);
-        Scanner scanner = new Scanner(System.in);
+    void readInputTest() {
 
-        ConsoleUserInterface ui = new ConsoleUserInterface(mockService, mockSession);
+        Scanner scanner = new Scanner(
+                new ByteArrayInputStream("Париж\n".getBytes())
+        );
+        DialogService mockService = Mockito.mock(DialogService.class);
+        UserSession mockSession = Mockito.mock(UserSession.class);
+
+        ConsoleUserInterface ui = new ConsoleUserInterface(mockService, mockSession, scanner);
+
+        Assertions.assertEquals("Париж", ui.readInput());
     }
 }
