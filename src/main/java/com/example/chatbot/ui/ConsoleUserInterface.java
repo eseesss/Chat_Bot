@@ -1,23 +1,24 @@
 package com.example.chatbot.ui;
 
 import com.example.chatbot.logic.DialogService;
+import com.example.chatbot.session.UserSession;
 
 import java.util.Scanner;
 
 public class ConsoleUserInterface implements UserInterface {
 
+    private final DialogService dialogService;
+    private final UserSession session;
     private final Scanner scanner;
-    private final DialogService dialogService; // Поле обязательное!
 
-    // 1. Конструктор для реального запуска
-    public ConsoleUserInterface(DialogService dialogService) {
-        this(new Scanner(System.in), dialogService);
+    public ConsoleUserInterface(DialogService dialogService, UserSession session) {
+        this(dialogService, session, new Scanner(System.in));
     }
 
-    // 2. Конструктор для тестов
-    public ConsoleUserInterface(Scanner scanner, DialogService dialogService) {
-        this.scanner = scanner;
+    public ConsoleUserInterface(DialogService dialogService, UserSession session, Scanner scanner) {
         this.dialogService = dialogService;
+        this.session = session;
+        this.scanner = scanner;
     }
 
     @Override
@@ -27,18 +28,21 @@ public class ConsoleUserInterface implements UserInterface {
 
     @Override
     public String readInput() {
-        if (scanner.hasNextLine()) {
-            return scanner.nextLine();
-        }
-        return "";
+        return scanner.nextLine();
     }
 
     public void start() {
-        showMessage("Введите /start для меню, /victorina для викторины, /news для новостей.");
+        System.out.println("=== Консольный режим ===");
+        System.out.println("Команды:");
+        System.out.println("  /start, /help   — меню и правила");
+        System.out.println("  /victorina      — викторина");
+        System.out.println("  /news           — новости (выбор источника → фильтр → новости)");
+        System.out.println("  /more           — ещё 5 новостей");
 
         while (true) {
-            String userAnswer = readInput();
-            String response = dialogService.processInput(userAnswer);
+            System.out.print("> ");
+            String input = readInput();
+            String response = dialogService.processInput(input, session);
             showMessage(response);
         }
     }
