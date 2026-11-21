@@ -4,20 +4,28 @@ import java.util.List;
 
 public class NewsSourceFactory {
 
-    // явное перечисление источников вместо switch по строкам
+    // Обогащенный enum: хранит ID, URL и название источника
     public enum SourceId {
-        RIA("source_ria"),
-        INTERFAX("source_interfax"),
-        LENTA("source_lenta");
+        RIA("source_ria", "https://ria.ru/export/rss2/archive/index.xml", "РИА Новости"),
+        INTERFAX("source_interfax", "https://www.interfax.ru/rss.asp", "Интерфакс"),
+        LENTA("source_lenta", "https://lenta.ru/rss", "Lenta.ru");
 
         private final String id;
+        private final String url;
+        private final String title;
 
-        SourceId(String id) {
+        SourceId(String id, String url, String title) {
             this.id = id;
+            this.url = url;
+            this.title = title;
         }
 
-        public String id() {
-            return id;
+        public String url() {
+            return url;
+        }
+
+        public String title() {
+            return title;
         }
 
         public static SourceId from(String id) {
@@ -30,27 +38,12 @@ public class NewsSourceFactory {
         }
     }
 
-    private final String riaUrl;
-    private final String riaName;
-    private final String lentaUrl;
-    private final String lentaName;
-    //URL Интерфакса вынесен в поле, а не захардкожен в switch
-    private final String interfaxUrl;
-    private final String interfaxName;
-
-    public NewsSourceFactory() {
-        this.riaUrl = "https://ria.ru/export/rss2/archive/index.xml";
-        this.riaName = "РИА Новости";
-        this.lentaUrl = "https://lenta.ru/rss";
-        this.lentaName = "Lenta.ru";
-        this.interfaxUrl = "https://www.interfax.ru/rss.asp";
-        this.interfaxName = "Интерфакс";
-    }
-
     public NewsSource createCompositeSource() {
-        NewsSource ria = new RssNewsSource(riaUrl, riaName);
-        NewsSource lenta = new RssNewsSource(lentaUrl, lentaName);
-        return new CompositeNewsSource(List.of(ria, lenta), "Все источники");
+        NewsSource ria = new RssNewsSource(SourceId.RIA.url(), SourceId.RIA.title());
+        NewsSource lenta = new RssNewsSource(SourceId.LENTA.url(), SourceId.LENTA.title());
+        NewsSource interfax = new RssNewsSource(SourceId.INTERFAX.url(), SourceId.INTERFAX.title());
+
+        return new CompositeNewsSource(List.of(ria, lenta, interfax), "Все источники");
     }
 
     public NewsSource createSourceById(String sourceId) {
@@ -58,10 +51,7 @@ public class NewsSourceFactory {
     }
 
     public NewsSource createSource(SourceId sourceId) {
-        return switch (sourceId) {
-            case RIA -> new RssNewsSource(riaUrl, riaName);
-            case INTERFAX -> new RssNewsSource(interfaxUrl, interfaxName);
-            case LENTA -> new RssNewsSource(lentaUrl, lentaName);
-        };
+        // Берем данные напрямую из enum
+        return new RssNewsSource(sourceId.url(), sourceId.title());
     }
 }

@@ -34,7 +34,6 @@ public class DialogService {
     public String processInput(String input, UserSession session) {
         String trimmed = input.trim();
 
-        //сначала обрабатываем шаг пошагового сценария новостей,
         if (session.getPendingStep() == UserSession.PendingStep.WAITING_SOURCE) {
             return handleSourceChoice(trimmed, session);
         }
@@ -56,7 +55,6 @@ public class DialogService {
         }
 
         if (trimmed.equals("/news")) {
-            //запускаем пошаговый выбора источника и фильтра
             session.setPendingStep(UserSession.PendingStep.WAITING_SOURCE);
             return "Выберите источник новостей:\n" +
                     "1 — РИА Новости\n" +
@@ -71,7 +69,6 @@ public class DialogService {
         return processAnswer(trimmed, session);
     }
 
-    //шаг выбора источника в консольном
     private String handleSourceChoice(String input, UserSession session) {
         String sourceId;
         switch (input) {
@@ -89,7 +86,6 @@ public class DialogService {
         return "Настроить фильтр негатива? (да/нет)";
     }
 
-    //шаг выбора фильтра в консольном
     private String handleFilterChoice(String input, UserSession session) {
         boolean enabled;
         if (input.equalsIgnoreCase("да") || input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")) {
@@ -108,13 +104,11 @@ public class DialogService {
         return prefix + newsText + "\n\nНапишите /more, чтобы получить ещё 5 новостей.";
     }
 
-    // Логика выбора источника (используется и Telegram-хендлером)
     public String selectSource(String sourceId, UserSession session) {
         session.setCurrentSource(sourceId);
         return "Источник выбран. Настроить фильтр негатива?";
     }
 
-    // Логика применения фильтра (фильтр хранится в сессии конкретного пользователя)
     public String applyFilter(boolean sentimentEnabled, UserSession session) {
         NewsFilter filter = sentimentEnabled ? new SentimentFilter() : new NoFilter();
         session.setCurrentFilter(filter);
@@ -125,7 +119,6 @@ public class DialogService {
                 : newsText;
     }
 
-    // Загрузка новостей по выбранному источнику (сохраняет в сессию)
     public String getNewsForSource(String sourceId, UserSession session) {
         session.setCurrentSource(sourceId);
 
@@ -141,7 +134,6 @@ public class DialogService {
         return newsBotService.formatNewsForTelegram(newsList);
     }
 
-    // Метод для кнопки "Ещё 5"
     public String getMoreNews(UserSession session) {
         List<NewsItem> feed = session.getCurrentNewsFeed();
         int offset = session.getCurrentNewsOffset();
