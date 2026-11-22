@@ -20,10 +20,8 @@ public class RssNewsSourceTest {
 
         List<NewsItem> result = source.fetch();
 
-        // Проверяем, что нашли 2 новости
         Assertions.assertEquals(2, result.size());
 
-        // Проверяем поля первой новости
         NewsItem first = result.get(0);
         Assertions.assertEquals("Заголовок новости 1", first.title());
         Assertions.assertEquals("https://e1.ru/news/1", first.url());

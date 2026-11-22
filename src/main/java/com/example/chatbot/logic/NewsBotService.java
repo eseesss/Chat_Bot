@@ -2,19 +2,36 @@ package com.example.chatbot.logic;
 
 import com.example.chatbot.model.NewsItem;
 import com.example.chatbot.news.NewsSource;
-
 import java.util.List;
 
 public class NewsBotService {
 
-    private final NewsSource newsSource;
+    // убрали final, чтобы можно было менять источник
+    private NewsSource currentNewsSource;
 
     public NewsBotService(NewsSource newsSource) {
-        this.newsSource = newsSource;
+        this.currentNewsSource = newsSource;
+    }
+
+    // добавлен сеттер для смены источника
+    public void setNewsSource(NewsSource newsSource) {
+        this.currentNewsSource = newsSource;
     }
 
     public List<NewsItem> getLatestNews() {
-        return newsSource.fetch();
+        // используем currentNewsSource
+        if (currentNewsSource == null) {
+            throw new IllegalStateException("Источник новостей не установлен!");
+        }
+        return currentNewsSource.fetch();
+    }
+
+    public List<NewsItem> getNextPage(List<NewsItem> feed, int offset, int limit) {
+        if (feed == null || feed.isEmpty()) {
+            return List.of();
+        }
+        int end = Math.min(offset + limit, feed.size());
+        return feed.subList(offset, end);
     }
 
     public String formatNewsForTelegram(List<NewsItem> newsList) {
