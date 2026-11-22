@@ -38,6 +38,7 @@ public class ConsoleUserInterface implements UserInterface {
         System.out.println("  /victorina      — викторина");
         System.out.println("  /news           — новости (выбор источника → фильтр → новости)");
         System.out.println("  /more           — ещё 5 новостей");
+        System.out.println("  /search ___           — поиск новостец по слову");
 
         while (true) {
             System.out.print("> ");

@@ -10,7 +10,9 @@ import com.example.chatbot.news.SentimentFilter;
 import com.example.chatbot.questions.QuestionProvider;
 import com.example.chatbot.session.UserSession;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DialogService {
 
@@ -47,6 +49,7 @@ public class DialogService {
                     "▶️ /victorina — начать викторину\n" +
                     "📰 /news — показать свежие новости\n" +
                     "➡️ /more — ещё 5 новостей\n" +
+                    "️🔎 /search ___ — поиск новостей по слову\n" +
                     "❓ /help — показать это сообщение";
         }
 
@@ -60,6 +63,14 @@ public class DialogService {
                     "1 — РИА Новости\n" +
                     "2 — Интерфакс\n" +
                     "3 — Lenta.ru";
+        }
+
+        if (trimmed.startsWith("/search ")) {
+            String keyword = trimmed.substring(8).trim();
+            if (keyword.isEmpty()) {
+                return "Пожалуйста, введите слово для поиска. Пример: /search спорт";
+            }
+            return searchNews(keyword, session);
         }
 
         if (trimmed.equals("/more")) {
@@ -101,7 +112,7 @@ public class DialogService {
 
         String newsText = getNewsForSource(session.getCurrentSource(), session);
         String prefix = enabled ? "Включен фильтр негатива.\n\n" : "";
-        return prefix + newsText + "\n\nНапишите /more, чтобы получить ещё 5 новостей.";
+        return prefix + newsText + "\n\nНапишите /more, чтобы получить ещё 5 новостей. \n\nНапишите /search ___, чтобы получить новости по слову. ";
     }
 
     public String selectSource(String sourceId, UserSession session) {
@@ -197,5 +208,42 @@ public class DialogService {
     public String getHelpText() {
         return "Правила простые: я задаю вопрос, ты пишешь ответ. " +
                 "В любой момент напиши \\help, чтобы увидеть это сообщение.";
+    }
+
+    public String searchNews(String keyword, UserSession session){
+        List<NewsItem> feed = session.getCurrentNewsFeed();
+        if (feed == null || feed.isEmpty()){
+            getNewsForSource(session.getCurrentSource(), session);
+            feed = session.getCurrentNewsFeed();
+        }
+
+        List<String> searchWords = SearchHelper.getSynonyms(keyword);
+
+        List<NewsItem> foundNews = new ArrayList<>();
+
+        for (NewsItem item : feed){
+            String title = item.title().toLowerCase();
+            String text = item.text().toLowerCase();
+            boolean found = false;
+
+            for (String word : searchWords) {
+                if (title.contains(word) || text.contains(word)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found){
+                foundNews.add(item);
+                if (foundNews.size() >= 5){
+                    break;
+                }
+            }
+        }
+        if (foundNews.isEmpty()){
+            return "По запросу «" + keyword + "» ничего не найдено.";
+        }
+        return "🔍 Результаты поиска по запросу «" + keyword + "»:\n\n"
+                + newsBotService.formatNewsForTelegram(foundNews);
     }
 }

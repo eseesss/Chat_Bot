@@ -74,6 +74,16 @@ public class TelegramBotHandler extends TelegramLongPollingBot {
             else if (messageText.equals("/news")) {
                 tgUi.sendMessageWithKeyboard("Выберите источник новостей:", createSourceSelectionMarkup());
             }
+            else if (messageText.startsWith("/search ")){
+                String keyword = messageText.substring(8).trim();
+                if (keyword.isEmpty()){
+                    tgUi.showMessage("Пожалуйста, введите слово для поиска. Пример: /search спорт");
+                }
+                else {
+                    String searchResult = dialogService.searchNews(keyword, session);
+                    tgUi.showMessage(searchResult);
+                }
+            }
             else {
                 String response = dialogService.processInput(messageText, session);
                 tgUi.showMessage(response);
