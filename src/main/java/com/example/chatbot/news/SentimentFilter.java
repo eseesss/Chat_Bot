@@ -9,15 +9,18 @@ import java.util.stream.Collectors;
 public class SentimentFilter implements NewsFilter{
 
     private static final List<Pattern> NEGATIVE_PATTERNS = List.of(
-            Pattern.compile("\\b\\w*войн\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*смерт\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*убий\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*катастроф\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*авари\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*трагед\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*кризис\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*теракт\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
-            Pattern.compile("\\b\\w*беспило\\w*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
+            Pattern.compile("войн", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("смерт", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("убий", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("катастроф", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("авари", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("трагед", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("кризис", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("теракт", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("беспило", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("ядер", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("террор", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile("удар", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
     );
 
     @Override

@@ -42,15 +42,13 @@ public class DialogService {
         if (session.getPendingStep() == UserSession.PendingStep.WAITING_FILTER) {
             return handleFilterChoice(trimmed, session);
         }
+        if (session.getPendingStep() == UserSession.PendingStep.WAITING_SEARCH) {
+            session.setPendingStep(UserSession.PendingStep.NONE);
+            return searchNews(trimmed, session);
+        }
 
         if (trimmed.equals("/start") || trimmed.equals("/help")) {
-            return "👋 Привет! Я бот-викторина с новостями.\n\n" +
-                    "Доступные команды:\n" +
-                    "▶️ /victorina — начать викторину\n" +
-                    "📰 /news — показать свежие новости\n" +
-                    "➡️ /more — ещё 5 новостей\n" +
-                    "️🔎 /search ___ — поиск новостей по слову\n" +
-                    "❓ /help — показать это сообщение";
+            return getMainMenuText();
         }
 
         if (trimmed.equals("/victorina")) {
@@ -78,6 +76,52 @@ public class DialogService {
         }
 
         return processAnswer(trimmed, session);
+    }
+// логика для тг
+    //Обработка нажатий inline-кнопок в Telegram
+public String processCallback(String callbackData, UserSession session) {
+    switch (callbackData) {
+        case "menu_news":
+            session.setPendingStep(UserSession.PendingStep.WAITING_SOURCE);
+            return "Выберите источник новостей:";
+        case "menu_victorina":
+            session.setPendingStep(UserSession.PendingStep.NONE);
+            return startDialog(session);
+        case "menu_search":
+            session.setPendingStep(UserSession.PendingStep.WAITING_SEARCH);
+            return "Введите слово для поиска (например: спорт):";
+        case "source_ria", "source_interfax", "source_lenta":
+            return selectSource(callbackData, session);
+        case "filter_sentiment":
+            return applyFilter(true, session);
+        case "filter_none":
+            return applyFilter(false, session);
+        case "more_news":
+            return getMoreNews(session);
+        case "universal_back":
+            return handleBack(session);
+        default:
+            return "Неизвестная команда.";
+    }
+}
+
+// логика возврата на шаг назад
+public String handleBack(UserSession session) {
+    switch (session.getPendingStep()) {
+        case WAITING_FILTER:
+            session.setPendingStep(UserSession.PendingStep.WAITING_SOURCE);
+            return "Выберите источник новостей:";
+        case WAITING_SOURCE:
+        case WAITING_SEARCH:
+        case NONE:
+        default:
+            session.setPendingStep(UserSession.PendingStep.NONE);
+            return getMainMenuText();
+    }
+}
+
+    public String getMainMenuText() {
+        return "👋 Привет! Я бот-викторина с новостями.\nВыберите действие на клавиатуре ниже:";
     }
 
     private String handleSourceChoice(String input, UserSession session) {
@@ -112,17 +156,19 @@ public class DialogService {
 
         String newsText = getNewsForSource(session.getCurrentSource(), session);
         String prefix = enabled ? "Включен фильтр негатива.\n\n" : "";
-        return prefix + newsText + "\n\nНапишите /more, чтобы получить ещё 5 новостей. \n\nНапишите /search ___, чтобы получить новости по слову. ";
+        return prefix + newsText;
     }
 
     public String selectSource(String sourceId, UserSession session) {
         session.setCurrentSource(sourceId);
+        session.setPendingStep(UserSession.PendingStep.WAITING_FILTER);
         return "Источник выбран. Настроить фильтр негатива?";
     }
 
     public String applyFilter(boolean sentimentEnabled, UserSession session) {
         NewsFilter filter = sentimentEnabled ? new SentimentFilter() : new NoFilter();
         session.setCurrentFilter(filter);
+        session.setPendingStep(UserSession.PendingStep.NONE);
 
         String newsText = getNewsForSource(session.getCurrentSource(), session);
         return sentimentEnabled
@@ -158,10 +204,6 @@ public class DialogService {
         session.setCurrentNewsOffset(offset + 5);
 
         return newsBotService.formatNewsForTelegram(nextPage);
-    }
-
-    public void setFilter(NewsFilter filter, UserSession session) {
-        session.setCurrentFilter(filter);
     }
 
     public String startDialog(UserSession session) {
@@ -218,7 +260,6 @@ public class DialogService {
         }
 
         List<String> searchWords = SearchHelper.getSynonyms(keyword);
-
         List<NewsItem> foundNews = new ArrayList<>();
 
         for (NewsItem item : feed){
