@@ -6,7 +6,8 @@ import java.util.Map;
 
 public class SearchHelper {
 
-    private static final Map<String, List<String>> SYNONYMS_MAP = Map.ofEntries(
+    // Убрали static. Теперь карта принадлежит объекту класса.
+    private final Map<String, List<String>> synonymsMap = Map.ofEntries(
             Map.entry("спорт", List.of("футбол", "хоккей", "баскетбол", "олимпиад", "теннис", "бокс", "матч", "турнир", "чемпионат", "фифа", "кхл", "рпл")),
             Map.entry("транспорт", List.of("самолет", "авиа", "автобус", "трамвай", "поезд", "машин", "жд", "дорог", "метро", "такси", "дтп", "аэропорт", "ржд")),
             Map.entry("украина", List.of("зеленский", "беспилотник", "всу", "киев", "украин", "сво", "бпла", "фронт", "обстрел")),
@@ -29,9 +30,8 @@ public class SearchHelper {
             Map.entry("мир", List.of("сша", "китай", "европ", "ес", "нато", "оон", "трамп", "байден", "герман", "франц", "израил", "ближний восток"))
     );
 
-    private SearchHelper() {}
-
-    public static List<String> getSynonyms(String keyword) {
+    // Убрали static
+    public List<String> getSynonyms(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return List.of();
         }
@@ -40,8 +40,8 @@ public class SearchHelper {
         List<String> result = new ArrayList<>();
         result.add(lowerKeyword);
 
-        if (SYNONYMS_MAP.containsKey(lowerKeyword)) {
-            result.addAll(SYNONYMS_MAP.get(lowerKeyword));
+        if (synonymsMap.containsKey(lowerKeyword)) {
+            result.addAll(synonymsMap.get(lowerKeyword));
         }
 
         return result;

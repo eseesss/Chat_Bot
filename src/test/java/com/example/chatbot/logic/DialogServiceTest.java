@@ -26,7 +26,7 @@ public class DialogServiceTest {
         // Создаем реальную сессию (или мок)
         session = new UserSession("test-chat-id");
 
-        service = new DialogService(provider, checker, newsBotService, new NewsSourceFactory());
+        service = new DialogService(provider, checker, newsBotService, new NewsSourceFactory(), new SearchHelper());
     }
 
     @Test

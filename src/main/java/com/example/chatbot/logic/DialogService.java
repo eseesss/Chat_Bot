@@ -22,15 +22,18 @@ public class DialogService {
     private final AnswerChecker answerChecker;
     private final NewsBotService newsBotService;
     private final NewsSourceFactory newsSourceFactory;
+    private final SearchHelper searchHelper;
 
     public DialogService(QuestionProvider questionProvider,
                          AnswerChecker answerChecker,
                          NewsBotService newsBotService,
-                         NewsSourceFactory newsSourceFactory) {
+                         NewsSourceFactory newsSourceFactory,
+                         SearchHelper searchHelper) {
         this.questionProvider = questionProvider;
         this.answerChecker = answerChecker;
         this.newsBotService = newsBotService;
         this.newsSourceFactory = newsSourceFactory;
+        this.searchHelper = searchHelper;
     }
 
     public String processInput(String input, UserSession session) {
@@ -259,7 +262,7 @@ public String handleBack(UserSession session) {
             feed = session.getCurrentNewsFeed();
         }
 
-        List<String> searchWords = SearchHelper.getSynonyms(keyword);
+        List<String> searchWords = searchHelper.getSynonyms(keyword);
         List<NewsItem> foundNews = new ArrayList<>();
 
         for (NewsItem item : feed){
