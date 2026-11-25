@@ -14,7 +14,8 @@ public class UserSession {
         NONE,
         WAITING_SOURCE,
         WAITING_FILTER,
-        WAITING_SEARCH
+        WAITING_SEARCH,
+        VIEWING_NEWS
     }
 
     private final String chatId;
