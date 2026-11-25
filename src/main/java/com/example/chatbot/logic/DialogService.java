@@ -39,6 +39,26 @@ public class DialogService {
     public String processInput(String input, UserSession session) {
         String trimmed = input.trim();
 
+        if (trimmed.equals("/back")) {
+            switch (session.getPendingStep()) {
+                case WAITING_FILTER:
+                    session.setPendingStep(UserSession.PendingStep.WAITING_SOURCE);
+                    return "Выберите источник новостей:\n" +
+                            "1 — РИА Новости\n" +
+                            "2 — Интерфакс\n" +
+                            "3 — Lenta.ru";
+                case VIEWING_NEWS:
+                    session.setPendingStep(UserSession.PendingStep.WAITING_FILTER);
+                    return "Настроить фильтр негатива? (да/нет)";
+                case WAITING_SOURCE:
+                case WAITING_SEARCH:
+                case NONE:
+                default:
+                    session.setPendingStep(UserSession.PendingStep.NONE);
+                    return getMainMenuText();
+            }
+        }
+
         if (session.getPendingStep() == UserSession.PendingStep.WAITING_SOURCE) {
             return handleSourceChoice(trimmed, session);
         }
@@ -80,7 +100,8 @@ public class DialogService {
 
         return processAnswer(trimmed, session);
     }
-// логика для тг
+
+    // логика для тг
     //Обработка нажатий inline-кнопок в Telegram
 public String processCallback(String callbackData, UserSession session) {
     switch (callbackData) {
@@ -114,6 +135,9 @@ public String handleBack(UserSession session) {
         case WAITING_FILTER:
             session.setPendingStep(UserSession.PendingStep.WAITING_SOURCE);
             return "Выберите источник новостей:";
+        case VIEWING_NEWS:
+            session.setPendingStep(UserSession.PendingStep.WAITING_FILTER);
+            return "Настроить фильтр негатива?";
         case WAITING_SOURCE:
         case WAITING_SEARCH:
         case NONE:
@@ -155,7 +179,7 @@ public String handleBack(UserSession session) {
         }
 
         session.setCurrentFilter(enabled ? new SentimentFilter() : new NoFilter());
-        session.setPendingStep(UserSession.PendingStep.NONE);
+        session.setPendingStep(UserSession.PendingStep.VIEWING_NEWS);
 
         String newsText = getNewsForSource(session.getCurrentSource(), session);
         String prefix = enabled ? "Включен фильтр негатива.\n\n" : "";
@@ -171,7 +195,7 @@ public String handleBack(UserSession session) {
     public String applyFilter(boolean sentimentEnabled, UserSession session) {
         NewsFilter filter = sentimentEnabled ? new SentimentFilter() : new NoFilter();
         session.setCurrentFilter(filter);
-        session.setPendingStep(UserSession.PendingStep.NONE);
+        session.setPendingStep(UserSession.PendingStep.VIEWING_NEWS);
 
         String newsText = getNewsForSource(session.getCurrentSource(), session);
         return sentimentEnabled
