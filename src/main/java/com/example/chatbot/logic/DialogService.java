@@ -22,18 +22,18 @@ public class DialogService {
     private final AnswerChecker answerChecker;
     private final NewsBotService newsBotService;
     private final NewsSourceFactory newsSourceFactory;
-    private final SearchHelper searchHelper;
+    private final LuceneSearchService luceneSearchService;
 
     public DialogService(QuestionProvider questionProvider,
                          AnswerChecker answerChecker,
                          NewsBotService newsBotService,
                          NewsSourceFactory newsSourceFactory,
-                         SearchHelper searchHelper) {
+                         LuceneSearchService luceneSearchService) {
         this.questionProvider = questionProvider;
         this.answerChecker = answerChecker;
         this.newsBotService = newsBotService;
         this.newsSourceFactory = newsSourceFactory;
-        this.searchHelper = searchHelper;
+        this.luceneSearchService = luceneSearchService;
     }
 
     public String processInput(String input, UserSession session) {
@@ -190,7 +190,7 @@ public String handleBack(UserSession session) {
         // Пользователь выбрал новый источник — показываем новости с начала,
         // поэтому сбрасываем смещение, чтобы пагинация "Ещё 5" не продолжила старый список.
         session.setCurrentNewsOffset(0);
-
+        luceneSearchService.indexNews(newsList);
         return newsBotService.formatNewsForTelegram(newsList);
     }
 
@@ -261,29 +261,9 @@ public String handleBack(UserSession session) {
             getNewsForSource(session.getCurrentSource(), session);
             feed = session.getCurrentNewsFeed();
         }
-
-        List<String> searchWords = searchHelper.getSynonyms(keyword);
-        List<NewsItem> foundNews = new ArrayList<>();
-
-        for (NewsItem item : feed){
-            String title = item.title().toLowerCase();
-            String text = item.text().toLowerCase();
-            boolean found = false;
-
-            for (String word : searchWords) {
-                if (title.contains(word) || text.contains(word)) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found){
-                foundNews.add(item);
-                if (foundNews.size() >= 5){
-                    break;
-                }
-            }
-        }
+        System.out.println("=== ПОИСК: ищем [" + keyword + "], новостей в сессии: " + (feed != null ? feed.size() : 0));
+        List<NewsItem> foundNews = luceneSearchService.search(keyword);
+        System.out.println("=== LUCENE НАШЕЛ: " + foundNews.size());
         if (foundNews.isEmpty()){
             return "По запросу «" + keyword + "» ничего не найдено.";
         }
