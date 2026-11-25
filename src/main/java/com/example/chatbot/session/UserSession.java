@@ -13,7 +13,9 @@ public class UserSession {
     public enum PendingStep {
         NONE,
         WAITING_SOURCE,
-        WAITING_FILTER
+        WAITING_FILTER,
+        WAITING_SEARCH,
+        VIEWING_NEWS
     }
 
     private final String chatId;

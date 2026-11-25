@@ -1,8 +1,6 @@
 package com.example.chatbot;
 
-import com.example.chatbot.logic.AnswerChecker;
-import com.example.chatbot.logic.DialogService;
-import com.example.chatbot.logic.NewsBotService;
+import com.example.chatbot.logic.*;
 import com.example.chatbot.model.Question;
 import com.example.chatbot.news.NewsSource;
 import com.example.chatbot.news.NewsSourceFactory;
@@ -27,8 +25,9 @@ public class Main {
         NewsSourceFactory factory = new NewsSourceFactory();
         NewsSource newsSource = factory.createCompositeSource();
         NewsBotService newsService = new NewsBotService(newsSource);
-
-        DialogService dialogService = new DialogService(repo, checker, newsService, factory);
+        SearchHelper searchHelper = new SearchHelper();
+        LuceneSearchService luceneSearchService = new LuceneSearchService(searchHelper);
+        DialogService dialogService = new DialogService(repo, checker, newsService, factory, luceneSearchService);
         SessionManager sessionManager = new SessionManager();
 
         String mode = args.length > 0 ? args[0].toLowerCase() : "console";
