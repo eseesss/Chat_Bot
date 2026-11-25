@@ -1,8 +1,6 @@
 package com.example.chatbot;
 
-import com.example.chatbot.logic.AnswerChecker;
-import com.example.chatbot.logic.DialogService;
-import com.example.chatbot.logic.NewsBotService;
+import com.example.chatbot.logic.*;
 import com.example.chatbot.model.Question;
 import com.example.chatbot.news.NewsSource;
 import com.example.chatbot.news.NewsSourceFactory;
@@ -15,7 +13,6 @@ import com.example.chatbot.ui.ConsoleUserInterface;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import com.example.chatbot.logic.SearchHelper;
 
 import java.util.List;
 
@@ -29,7 +26,8 @@ public class Main {
         NewsSource newsSource = factory.createCompositeSource();
         NewsBotService newsService = new NewsBotService(newsSource);
         SearchHelper searchHelper = new SearchHelper();
-        DialogService dialogService = new DialogService(repo, checker, newsService, factory, searchHelper);
+        LuceneSearchService luceneSearchService = new LuceneSearchService(searchHelper);
+        DialogService dialogService = new DialogService(repo, checker, newsService, factory, luceneSearchService);
         SessionManager sessionManager = new SessionManager();
 
         String mode = args.length > 0 ? args[0].toLowerCase() : "console";
